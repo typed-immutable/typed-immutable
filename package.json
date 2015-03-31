@@ -1,0 +1,45 @@
+{
+  "name": "typed-immutable",
+  "version": "0.0.0",
+  "description": "Library for structuring data with immutable typed records",
+  "author": "Irakli Gozalishvili <rfobic@gmail.com> (http://jeditoolkit.com)",
+  "homepage": "https://github.com/gozala/typed-immutable",
+  "keywords": [
+    "record",
+    "structure",
+    "schema",
+    "typed",
+    "immutable",
+    "data",
+    "persistent",
+    "datastructure",
+    "functional"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/gozala/typed-immutable.git",
+    "web": "https://github.com/Gozala/typed-immutable"
+  },
+  "bugs": {
+    "url": "https://github.com/gozala/typed-immutable/issues"
+  },
+  "license": "MIT",
+  "main": "./lib/index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "tap lib/test/*.js",
+    "start": "babel --watch --modules umdStrict --source-maps-inline --out-dir ./lib ./src",
+    "prepublish": "babel --modules umdStrict --source-maps-inline --out-dir ./lib ./src"
+  },
+  "dependencies": {
+    "immutable": "^3.7.0"
+  },
+  "devDependencies": {
+    "babel": "^4.7.4",
+    "immutable": "^3.6.4",
+    "tap": "~0.4.8",
+    "tape": "~2.3.2"
+  }
+}

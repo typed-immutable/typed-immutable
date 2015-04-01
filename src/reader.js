@@ -39,7 +39,7 @@ Reader.Type = class extends Typed {
   toTypeName() {
     const label = this[$label]
     const {defaultValue} = this
-    return defaultValue === void(0) ? label : `${label}(${defaultValue})`
+    return defaultValue === void(0) ? label : `${label}(${JSON.stringify(defaultValue)})`
   }
 }
 

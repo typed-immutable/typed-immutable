@@ -5,11 +5,17 @@ import * as Immutable from 'immutable'
 const {Keyed} = Immutable.Iterable
 const {Seq, Map} = Immutable
 
-const LazyGet = key => function() {
-  var value = this.get(key)
-  Object.defineProperty(this, key, {value: value})
-  return value
+const Getter = key => function() {
+  return this.get(key)
 }
+
+const Setter = key => function(value) {
+  if (!this.__ownerID) {
+    throw TypeError("Cannot set on an immutable record.")
+  }
+  this.set(key, value)
+}
+
 
 const $store = Typed.store
 const $construct = Typed.construct
@@ -19,6 +25,7 @@ const $step = Typed.step
 const $init = Typed.init
 const $result = Typed.result
 const $label = Typed.label
+const $empty = Typed.empty
 
 class TypedRecord extends Typed.Iterable.Keyed {
   constructor() {}
@@ -33,7 +40,7 @@ class TypedRecord extends Typed.Iterable.Keyed {
     let record
     for (let key in readers) {
       const reader = readers[key]
-      const value = seq.get(key)
+      const value = seq.has(key) ? seq.get(key) : this.get(key)
       const result = reader[$read](value)
 
       if (result instanceof TypeError) {
@@ -49,7 +56,7 @@ class TypedRecord extends Typed.Iterable.Keyed {
     const store = result[$store] ? result[$store].set(key, value) :
                   new Map([[key, value]])
 
-    const record = result.__ownerID ? result : result[$construct]
+    const record = result.__ownerID ? result : result[$construct]()
     record[$store] = store
 
     return record
@@ -83,15 +90,26 @@ class TypedRecord extends Typed.Iterable.Keyed {
            this[$store].get(key, defaultValue);
   }
 
+  clear() {
+    if (this.__ownerID) {
+      this[$store] && this[$store].clear()
+      return this
+    }
+
+    const RecordType = this.constructor
+    return this[$empty] ||
+           (RecordType[$empty] = new RecordType())
+  }
+
   remove(key) {
     return this[$readers][key] ? this.set(key, void(0)) : this
   }
 
   set(key, value) {
-    const reader = this[$readres][key]
+    const reader = this[$readers][key]
 
     if (!reader) {
-      throw TypeError(`Cannot set unknown field "${key}" on "${this.typeName()}"`)
+      throw TypeError(`Cannot set unknown field "${key}" on "${this.toTypeName()}"`)
     }
 
     const result = reader[$read](value)
@@ -131,7 +149,7 @@ export const Record = function(descriptor, label) {
 
         if (reader) {
           readers[key] = reader
-          properties[key] = {get: LazyGet(key)}
+          properties[key] = {get:Getter(key), set:Setter(key)}
         } else {
           throw TypeError(`Invalid field descriptor provided for a "${key}" field`)
         }
@@ -140,16 +158,29 @@ export const Record = function(descriptor, label) {
       }
 
       const RecordType = function(structure) {
-        const result = RecordType.prototype[$read](structure)
+        const isNew = this instanceof RecordType
+        const constructor = isNew ? this.constructor : RecordType
+
+        if (structure instanceof constructor) {
+          return structure
+        }
+
+        const result = constructor.prototype[$read](structure)
+
         if (result instanceof TypeError) {
           throw result
         }
 
-        return result
+        if (isNew) {
+          this[$store] = result[$store]
+        } else {
+          return result
+        }
       }
 
       properties.constructor = {value: RecordType}
-      RecordType.prototype = Object.create(TypedRecord.prototype, properties)
+      RecordType.prototype = Object.create(TypedRecordPrototype, properties)
+      const prototype = RecordType.prototype
 
       return RecordType
     } else {
@@ -159,3 +190,6 @@ export const Record = function(descriptor, label) {
     throw TypeError(`Typed.Record must be passed a descriptor of fields`)
   }
 }
+Record.Type = TypedRecord
+Record.prototype = TypedRecord.prototype
+const TypedRecordPrototype = TypedRecord.prototype

@@ -13,6 +13,7 @@ const $label = Symbol.for("typed/label")
 const $init = Symbol.for("transducer/init")
 const $result = Symbol.for("transducer/result")
 const $step = Symbol.for("transducer/step")
+const $empty = Symbol.for("typed/empty")
 
 export class Typed {
   [$read]() {
@@ -40,6 +41,7 @@ Typed.result = $result
 Typed.step = $step
 Typed.label = $label
 Typed.DELETE = "delete"
+Typed.empty = $empty
 
 const TypedPrototype = Typed.prototype
 
@@ -55,6 +57,9 @@ Typed.Iterable = class TypedIterable extends Immutable.Iterable {
     result.__ownerID = ownerID
     result[$store] = store
     return result
+  }
+  wasAltered() {
+    return this[$store].wasAltered()
   }
 }
 
@@ -77,6 +82,7 @@ KeyedPrototype[Typed.result] = TypedPrototype[Typed.result]
 KeyedPrototype[Typed.read] = TypedPrototype[Typed.read]
 KeyedPrototype[Typed.construct] = TypedPrototype[Typed.construct]
 KeyedPrototype.__ensureOwner = IterablePrototype.__ensureOwner
+KeyedPrototype.wasAltered = IterablePrototype.wasAltered
 KeyedPrototype.deleteIn =
 KeyedPrototype.removeIn = Immutable.Map.prototype.removeIn
 KeyedPrototype.merge = Immutable.Map.prototype.merge
@@ -111,6 +117,7 @@ IndexedPrototype[Typed.result] = TypedPrototype[Typed.result]
 IndexedPrototype[Typed.read] = TypedPrototype[Typed.read]
 IndexedPrototype[Typed.construct] = TypedPrototype[Typed.construct]
 IndexedPrototype.__ensureOwner = IterablePrototype.__ensureOwner
+IndexedPrototype.wasAltered = IterablePrototype.wasAltered
 IndexedPrototype.deleteIn =
 IndexedPrototype.removeIn = Immutable.Map.prototype.removeIn
 IndexedPrototype.merge = Immutable.Map.prototype.merge

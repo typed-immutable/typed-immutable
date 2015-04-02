@@ -6,7 +6,7 @@ if (typeof(Symbol) === 'undefined') {
 }
 
 const $read = Symbol.for("typed/read")
-const $readers = Symbol.for("typed/readers")
+const $reader = Symbol.for("typed/reader")
 const $store = Symbol.for("typed/store")
 const $construct = Symbol("typed/construct")
 const $label = Symbol.for("typed/label")
@@ -33,7 +33,7 @@ export class Typed {
   }
 }
 Typed.read = $read
-Typed.readers = $readers
+Typed.reader = $reader
 Typed.store = $store
 Typed.construct = $construct
 Typed.init = $init

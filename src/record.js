@@ -19,7 +19,7 @@ const Setter = key => function(value) {
 
 const $store = Typed.store
 const $construct = Typed.construct
-const $readers = Typed.readers
+const $readers = Typed.reader
 const $read = Typed.read
 const $step = Typed.step
 const $init = Typed.init
@@ -179,7 +179,7 @@ export const Record = function(descriptor, label) {
       }
 
       properties.constructor = {value: RecordType}
-      RecordType.prototype = Object.create(TypedRecordPrototype, properties)
+      RecordType.prototype = Object.create(RecordPrototype, properties)
       const prototype = RecordType.prototype
 
       return RecordType
@@ -192,4 +192,29 @@ export const Record = function(descriptor, label) {
 }
 Record.Type = TypedRecord
 Record.prototype = TypedRecord.prototype
-const TypedRecordPrototype = TypedRecord.prototype
+const RecordPrototype = TypedRecord.prototype
+
+RecordPrototype.map = void(0)
+RecordPrototype.filter = void(0)
+RecordPrototype.filterNot = void(0)
+
+RecordPrototype.flip = void(0)
+RecordPrototype.mapKeys = void(0)
+RecordPrototype.mapEntries = void(0)
+RecordPrototype.sort = void(0)
+RecordPrototype.sortBy = void(0)
+RecordPrototype.reverse = void(0)
+RecordPrototype.slice = void(0)
+RecordPrototype.butLast = void(0)
+RecordPrototype.flatMap = void(0)
+RecordPrototype.flatten = void(0)
+RecordPrototype.rest = void(0)
+RecordPrototype.skip = void(0)
+RecordPrototype.skipLast = void(0)
+RecordPrototype.skipWhile = void(0)
+RecordPrototype.skipUntil = void(0)
+RecordPrototype.sortBy = void(0)
+RecordPrototype.take = void(0)
+RecordPrototype.takeLast = void(0)
+RecordPrototype.takeWhile = void(0)
+RecordPrototype.takeUntil = void(0)

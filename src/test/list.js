@@ -45,6 +45,83 @@ test("number list", assert => {
   assert.equal(ns2.last(), 5)
 })
 
+test("empty record list", assert => {
+  const v = Points()
+
+  assert.ok(v instanceof Immutable.List)
+  assert.ok(v instanceof List)
+  assert.ok(v instanceof Points)
+
+  assert.equal(v.size, 0)
+
+
+})
+
+test("make list as function call", assert => {
+  const v = Points([{x: 1}])
+
+  assert.ok(v instanceof Immutable.List)
+  assert.ok(v instanceof List)
+  assert.ok(v instanceof Points)
+
+  assert.equal(v.size, 1)
+
+  assert.ok(v.get(0) instanceof Record)
+  assert.ok(v.get(0) instanceof Point)
+  assert.deepEqual(v.toJSON(), [{x:1, y:0}])
+})
+
+test("make list of records", assert => {
+  const v = Points.of({x:10}, {x:15}, {x:17})
+  assert.ok(v instanceof Immutable.List)
+  assert.ok(v instanceof List)
+  assert.ok(v instanceof Points)
+
+  assert.equal(v.size, 3)
+
+  assert.ok(v.get(0) instanceof Record)
+  assert.ok(v.get(0) instanceof Point)
+
+  assert.ok(v.get(1) instanceof Record)
+  assert.ok(v.get(1) instanceof Point)
+
+  assert.ok(v.get(2) instanceof Record)
+  assert.ok(v.get(2) instanceof Point)
+
+  assert.deepEqual(v.toJSON(), [{x:10, y:0},
+                                {x:15, y:0},
+                                {x:17, y:0}])
+})
+
+test("make list with new", assert => {
+  const v = new Points([{x: 3}])
+
+  assert.ok(v instanceof Immutable.List)
+  assert.ok(v instanceof List)
+  assert.ok(v instanceof Points)
+
+  assert.equal(v.size, 1)
+
+  assert.ok(v.get(0) instanceof Record)
+  assert.ok(v.get(0) instanceof Point)
+  assert.deepEqual(v.toJSON(), [{x:3, y:0}])
+})
+
+test("toString on typed list", assert => {
+  const points = Points.of({x: 10}, {y: 2})
+  const numbers = NumberList.of(1, 2, 3)
+  const strings = StringList.of("hello", "world")
+
+  assert.equal(points.toString(),
+               `Points([ Point({ "x": 10, "y": 0 }), Point({ "x": 0, "y": 2 }) ])`)
+
+  assert.equal(numbers.toString(),
+               `Typed.List(Number)([ 1, 2, 3 ])`)
+
+  assert.equal(strings.toString(),
+               `Typed.List(String)([ "hello", "world" ])`)
+})
+
 test("create list from entries", assert => {
   const ns1 = NumberList.of(1, 2, 3, 4)
   assert.equal(ns1.toString(),
@@ -56,6 +133,181 @@ test("create list from entries", assert => {
                    [1, 2, 3, 4])
 })
 
+test("converts sequences to list", assert => {
+  const seq = Immutable.Seq([{x: 1}, {x: 2}])
+  const v = Points(seq)
+
+  assert.ok(v instanceof Immutable.List)
+  assert.ok(v instanceof List)
+  assert.ok(v instanceof Points)
+
+  assert.equal(v.size, 2)
+
+  assert.ok(v.get(0) instanceof Record)
+  assert.ok(v.get(0) instanceof Point)
+  assert.ok(v.get(1) instanceof Record)
+  assert.ok(v.get(1) instanceof Point)
+
+  assert.deepEqual(v.toJSON(), [{x:1, y:0},
+                                {x:2, y:0}])
+})
+
+test("can be subclassed", assert => {
+  class Graph extends Points {
+    foo() {
+      const first = this.first()
+      const last = this.last()
+      return last.x - first.x
+    }
+  }
+
+  const v1 = new Graph([{y:3},{x:7},{x:9, y:4}])
+
+  assert.ok(v1 instanceof Immutable.List)
+  assert.ok(v1 instanceof List)
+  assert.ok(v1 instanceof Points)
+  assert.ok(v1 instanceof Graph)
+
+  assert.equal(v1.foo(), 9)
+  assert.deepEqual(v1.toJSON(),
+                   [{x:0, y:3},
+                    {x:7, y:0},
+                    {x:9, y:4}])
+
+  const v2 = v1.set(0, {x: 2, y: 4})
+
+  assert.ok(v2 instanceof Immutable.List)
+  assert.ok(v2 instanceof List)
+  assert.ok(v2 instanceof Points)
+  assert.ok(v2 instanceof Graph)
+
+  assert.equal(v2.foo(), 7)
+  assert.deepEqual(v2.toJSON(),
+                   [{x:2, y:4},
+                    {x:7, y:0},
+                    {x:9, y:4}])
+})
+
+test("short-circuits if already a list", assert => {
+  const v1 = Points.of({x: 2, y: 4},
+                       {x: 8, y: 3})
+
+  assert.equal(v1, Points(v1))
+
+  assert.equal(v1, new Points(v1))
+
+  const OtherPoints = List(Point)
+
+  assert.ok(OtherPoints(v1) instanceof OtherPoints)
+  assert.notOk(OtherPoints(v1) instanceof Points)
+  assert.notEqual(v1, OtherPoints(v1))
+  assert.ok(v1.equals(OtherPoints(v1)))
+
+  assert.ok(new OtherPoints(v1) instanceof OtherPoints)
+  assert.notOk(new OtherPoints(v1) instanceof Points)
+  assert.notEqual(v1, new OtherPoints(v1))
+  assert.ok(v1.equals(new OtherPoints(v1)))
+
+  class SubPoints extends Points {
+    head() {
+      return this.first()
+    }
+  }
+
+  assert.notEqual(v1, new SubPoints(v1))
+  assert.ok(v1.equals(new SubPoints(v1)))
+
+
+  assert.equal(new SubPoints(v1).head(),
+               v1.first())
+})
+
+test("can be cleared", assert => {
+  const v1 = Points.of({x:1}, {x:2}, {x:3})
+  const v2 = v1.clear()
+
+  assert.ok(v1 instanceof Points)
+  assert.ok(v2 instanceof Points)
+
+  assert.equal(v1.size, 3)
+  assert.equal(v2.size, 0)
+
+  assert.deepEqual(v1.toJSON(),
+                   [{x:1, y:0}, {x:2, y:0}, {x:3, y:0}])
+
+  assert.deepEqual(v2.toJSON(),
+                   [])
+
+  assert.equal(v2.first(), void(0))
+})
+
+test("can construct records", assert => {
+  const v1 = Points()
+  const v2 = v1.push({x:1})
+  const v3 = v2.push({y:2})
+  const v4 = v3.push({x:3, y:3})
+  const v5 = v4.push(void(0))
+
+  assert.ok(v1 instanceof Points)
+  assert.ok(v2 instanceof Points)
+  assert.ok(v3 instanceof Points)
+  assert.ok(v4 instanceof Points)
+  assert.ok(v5 instanceof Points)
+
+  assert.equal(v1.size, 0)
+  assert.equal(v2.size, 1)
+  assert.equal(v3.size, 2)
+  assert.equal(v4.size, 3)
+  assert.equal(v5.size, 4)
+
+  assert.deepEqual(v1.toJSON(), [])
+  assert.deepEqual(v2.toJSON(), [{x:1, y:0}])
+  assert.deepEqual(v3.toJSON(), [{x:1, y:0},
+                                 {x:0, y:2}])
+  assert.deepEqual(v4.toJSON(), [{x:1, y:0},
+                                 {x:0, y:2},
+                                 {x:3, y:3}])
+  assert.deepEqual(v5.toJSON(), [{x:1, y:0},
+                                 {x:0, y:2},
+                                 {x:3, y:3},
+                                 {x:0, y:0}])
+})
+
+test("can update sub-records", assert => {
+  const v1 = Points.of({x: 4}, {y: 4})
+  const v2 = v1.setIn([0, "y"], 5)
+  const v3 = v2.set(2, void(0))
+  const v4 = v3.setIn([1, "y"], void(0))
+
+  assert.ok(v1 instanceof Points)
+  assert.ok(v2 instanceof Points)
+  assert.ok(v3 instanceof Points)
+  assert.ok(v4 instanceof Points)
+
+  assert.equal(v1.size, 2)
+  assert.equal(v2.size, 2)
+  assert.equal(v3.size, 3)
+  assert.equal(v4.size, 3)
+
+  assert.deepEqual(v1.toJSON(),
+                   [{x:4, y:0},
+                    {x:0, y:4}])
+
+  assert.deepEqual(v2.toJSON(),
+                   [{x:4, y:5},
+                    {x:0, y:4}])
+
+  assert.deepEqual(v3.toJSON(),
+                   [{x:4, y:5},
+                    {x:0, y:4},
+                    {x:0, y:0}])
+
+  assert.deepEqual(v4.toJSON(),
+                   [{x:4, y:5},
+                    {x:0, y:0},
+                    {x:0, y:0}])
+})
+
 test("serialize & parse", assert => {
   const ns1 = NumberList.of(1, 2, 3, 4)
 
@@ -64,6 +316,16 @@ test("serialize & parse", assert => {
 
   assert.ok(ns1.constructor(ns1.toJSON()).equals(ns1),
             "parsing with constructor")
+})
+
+test("serialize & parse nested", assert => {
+  const v1 = Points.of({x:1}, {x:2}, {y:3})
+
+  assert.ok(Points(v1.toJSON()).equals(v1))
+  assert.ok(v1.constructor(v1.toJSON()).equals(v1))
+  assert.ok(v1.equals(new Points(v1.toJSON())))
+
+  assert.ok(Points(v1.toJSON()).get(0) instanceof Point)
 })
 
 test("construct with array", assert => {
@@ -95,6 +357,14 @@ test("does not construct form a scalar", assert => {
 })
 
 
+test("can not construct with invalid data", assert => {
+  const Point = Record({x:Number, y:Number}, "Point")
+  const Points = List(Point, "Points")
+
+  assert.throws(_ => Points.of({x:1, y:0}, {y:2, x:2}, {x:3}),
+                /"undefined" is not a number/)
+})
+
 test("set and get a value", assert => {
   const ns = NumberList()
   const ns2 = ns.set(0, 7)
@@ -108,6 +378,20 @@ test("set and get a value", assert => {
   assert.equal(ns2.get(0), 7)
 })
 
+test("set and get records", assert => {
+  const v1 = Points()
+  const v2 = v1.set(0, {x:7})
+
+  assert.equal(v1.size, 0)
+  assert.equal(v1.count(), 0)
+  assert.equal(v1.get(0), void(0))
+
+  assert.equal(v2.size, 1)
+  assert.equal(v2.count(), 1)
+  assert.ok(v2.get(0) instanceof Point)
+  assert.ok(v2.get(0).toJSON(), {x:7, y:0})
+})
+
 test("can not set invalid value", assert => {
   const ns = NumberList()
 
@@ -115,6 +399,20 @@ test("can not set invalid value", assert => {
                 /"foo" is not a number/)
 
   assert.equal(ns.size, 0)
+})
+
+test("can not set invalid structure", assert => {
+  const v = Points()
+
+  assert.throws(_ => v.set(0, 5),
+                /Invalid data structure/)
+})
+
+test("can not set undeclared fields", assert => {
+  const v = Points.of({x: 9})
+
+  assert.throws(_ => v.setIn([0, "d"], 4),
+                /Cannot set unknown field "d"/)
 })
 
 test("counts from the end of the list on negative index", assert => {
@@ -381,6 +679,7 @@ test('maps values', assert => {
 
   assert.ok(v0 instanceof NumberList)
   assert.ok(v1 instanceof NumberList)
+  assert.ok(v1 instanceof Immutable.List)
 
   assert.equal(v0.size, 3)
   assert.equal(v1.size, 3)
@@ -388,6 +687,53 @@ test('maps values', assert => {
   assert.deepEqual(v0.toArray(), [1, 2, 3])
   assert.deepEqual(v1.toArray(), [2, 3, 4])
 })
+
+test('maps records to any', assert => {
+  const v0 = Points.of({x:1}, {y:2}, {x:3, y:3})
+  const v1 = v0.map(({x, y}) => ({x: x+1, y: y*y}))
+
+  assert.ok(v0 instanceof Points)
+  assert.notOk(v1 instanceof Points)
+  assert.ok(v1 instanceof Immutable.List)
+  assert.equal(v1.toTypeName(), 'Typed.List(Any)')
+
+  assert.equal(v0.size, 3)
+  assert.equal(v1.size, 3)
+
+  assert.deepEqual(v0.toJSON(),
+                   [{x:1, y:0},
+                    {x:0, y:2},
+                    {x:3, y:3}])
+
+  assert.deepEqual(v1.toJSON(),
+                   [{x:2, y:0},
+                    {x:1, y:4},
+                    {x:4, y:9}])
+})
+
+test('maps records to records', assert => {
+  const v0 = Points.of({x:1}, {y:2}, {x:3, y:3})
+  const v1 = v0.map(point => point.update('x', inc)
+                                  .update('y', inc))
+
+  assert.ok(v0 instanceof Points)
+  assert.ok(v1 instanceof Points)
+  assert.ok(v1 instanceof Immutable.List)
+
+  assert.equal(v0.size, 3)
+  assert.equal(v1.size, 3)
+
+  assert.deepEqual(v0.toJSON(),
+                   [{x:1, y:0},
+                    {x:0, y:2},
+                    {x:3, y:3}])
+
+  assert.deepEqual(v1.toJSON(),
+                   [{x:2, y:1},
+                    {x:1, y:3},
+                    {x:4, y:4}])
+})
+
 
 test('filters values', assert => {
   const v0 = NumberList.of(1, 2, 3, 4, 5, 6)

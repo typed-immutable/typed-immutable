@@ -1,5 +1,5 @@
 import {Typed} from "./core"
-import {Reader} from "./reader"
+import {Reader, Union, Any} from "./reader"
 import * as Immutable from 'immutable'
 
 
@@ -29,22 +29,45 @@ const clear = target => target.clear()
 const pop = target => target.pop()
 const shift = target => target.shift()
 
-class TypedList extends Immutable.List {
-  constructor() {}
+class TypeInferer extends Reader {
+  toTypeName() {
+    return 'TypeInferer'
+  }
+  [Typed.read](value) {
+    const type = Reader.for(value).constructor.prototype
+    this.type = this.type ? Union(this.type, type) : type
+    return value
+  }
+}
+
+class TypeInferedList extends Immutable.List {
+  static from(list) {
+    const result = this.prototype[$construct]()
+    result[$store] = list[$store]
+    return result
+  }
+  constructor(value) {
+    return TypeInferedList.prototype[$read](value)
+  }
   [Typed.construct]() {
     return Object.create(this.constructor.prototype)
   }
   [Typed.init]() {
-    return this[$construct]().asMutable()
+    const result = this[$construct]().asMutable()
+    result[$reader] = new TypeInferer()
+    return result
   }
   [Typed.result](result) {
-    return result.asImmutable()
+    const list = result.asImmutable()
+    list[$reader] = result[$reader].type
+
+    return list
   }
 
   [Typed.read](input) {
-    if (input === null || input === void(0)) {
-      const Type = this.constructor
+    const Type = this.constructor
 
+    if (input === null || input === void(0)) {
       if (!Type[$empty]) {
         const result = this[$construct]()
         result[$store] = ImmutableList()
@@ -54,6 +77,11 @@ class TypedList extends Immutable.List {
 
       return Type[$empty]
     }
+
+    if (input instanceof Type && input.constructor === Type) {
+      return input
+    }
+
 
     const list = this[$init]()
     Indexed(input).forEach((value, index) => {
@@ -186,53 +214,85 @@ class TypedList extends Immutable.List {
     return Indexed(this[$store]).map((_, key) => this.get(key)).__iterate(f, reverse)
   }
 }
+TypeInferedList.prototype[Typed.DELETE] = TypeInferedList.prototype.remove;
 
-export const List = function(type, label) {
-  const reader = Reader.for(type)
-  if (reader) {
-    const ListType = function(value) {
-      const isListType = this instanceof ListType
-      const Type = isListType ? this.constructor : ListType
-
-      if (value instanceof Type) {
-        return value
-      }
-
-      const result = Type.prototype[$read](value)
-
-      if (result instanceof TypeError) {
-        throw result
-      }
-
-      // `list.map(f)` will in fact cause `list.constructor(items)` to be
-      // invoked there for we need to check if `this[$store]` was
-      // assigned to know if it's that or if it's a `new ListType()` call.
-      if (isListType && !this[$store]) {
-        this[$store] = result[$store]
+class TypedList extends TypeInferedList {
+  constructor() {}
+  [Typed.init]() {
+    return this[$construct]().asMutable()
+  }
+  [Typed.result](result) {
+    return result.asImmutable()
+  }
+  map(mapper, context) {
+    if (this.size === 0) {
+      return this
+    } else {
+      const result = TypeInferedList.from(this).map(mapper, context)
+      if (result[$reader] === this[$reader]) {
+        const list = this[$construct]()
+        list[$store] = result[$store]
+        list.size = result.size
+        return list
       } else {
         return result
       }
-
-      return this
-    }
-    ListType.of = ImmutableList.of
-    ListType.prototype = Object.create(ListPrototype, {
-      constructor: {value: ListType},
-      [$reader]: {value: reader},
-      [$label]: {value: label}
-    })
-
-    return ListType
-  } else {
-    if (type === void(0)) {
-      throw TypeError("Typed.List must be passed a type descriptor")
-    } else {
-      throw TypeError("Typed.List was passed an invalid type descriptor: ${type}")
     }
   }
+}
+
+export const List = function(type, label) {
+  if (type === void(0)) {
+    throw TypeError("Typed.List must be passed a type descriptor")
+  }
+
+  if (type === Any) {
+    return Immutable.List
+  }
+
+  const reader = Reader.for(type)
+
+  if (reader === Any) {
+    throw TypeError("Typed.List was passed an invalid type descriptor: ${type}")
+  }
+
+  const ListType = function(value) {
+    const isListType = this instanceof ListType
+    const Type = isListType ? this.constructor : ListType
+
+    if (value instanceof Type) {
+      return value
+    }
+
+    const result = Type.prototype[$read](value)
+
+    if (result instanceof TypeError) {
+      throw result
+    }
+
+    // `list.map(f)` will in fact cause `list.constructor(items)` to be
+    // invoked there for we need to check if `this[$store]` was
+    // assigned to know if it's that or if it's a `new ListType()` call.
+    if (isListType && !this[$store]) {
+      this[$store] = result[$store]
+      this.size = result.size
+    } else {
+      return result
+    }
+
+    return this
+  }
+  ListType.of = ImmutableList.of
+  ListType.prototype = Object.create(ListPrototype, {
+    constructor: {value: ListType},
+    [$reader]: {value: reader},
+    [$label]: {value: label}
+  })
+
+  return ListType
 }
 List.Type = TypedList
 List.prototype = TypedList.prototype
 const ListPrototype = TypedList.prototype
 
-ListPrototype[Typed.DELETE] = ListPrototype.remove;
+

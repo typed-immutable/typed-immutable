@@ -30,6 +30,12 @@ const $empty = Typed.empty
 class TypedRecord extends Typed.Iterable.Keyed {
   constructor() {}
   [Typed.read](structure={}) {
+    const Type = this.constructor
+
+    if (structure instanceof Type && structure.constructor === Type) {
+      return structure
+    }
+
     if (!structure || typeof(structure) !== "object") {
       return TypeError(`Invalid data structure "${structure}" was passed to ${this.toTypeName()}`)
     }

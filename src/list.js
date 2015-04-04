@@ -140,7 +140,10 @@ class TypeInferedList extends Immutable.List {
   push(...values) {
     const type = this[$type]
     const items = []
-    for (let value of values) {
+    const count = values.length
+    let index = 0
+    while (index < count) {
+      const value = values[index]
       const result = type[$read](value)
 
       if (result instanceof TypeError) {
@@ -148,6 +151,7 @@ class TypeInferedList extends Immutable.List {
       }
 
       items.push(result)
+      index = index + 1
     }
 
     return change(this, store =>
@@ -159,7 +163,11 @@ class TypeInferedList extends Immutable.List {
   unshift(...values) {
     const type = this[$type]
     const items = []
-    for (let value of values) {
+    const count = values.length
+    let index = 0
+
+    while (index < count) {
+      const value = values[index]
       const result = type[$read](value)
 
       if (result instanceof TypeError) {
@@ -167,6 +175,7 @@ class TypeInferedList extends Immutable.List {
       }
 
       items.push(result)
+      index = index + 1
     }
 
     return change(this, store =>

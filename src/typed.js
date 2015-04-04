@@ -1,7 +1,7 @@
 import * as Immutable from 'immutable'
 
 if (typeof(Symbol) === 'undefined') {
-  Symbol = hint => `@@${hint}`
+  var Symbol = hint => `@@${hint}`
   Symbol.for = Symbol
 }
 

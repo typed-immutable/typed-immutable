@@ -1,840 +1,285 @@
+import * as Immutable from 'immutable'
+
 if (typeof(Symbol) === 'undefined') {
   Symbol = hint => `@@${hint}`
   Symbol.for = Symbol
 }
 
-if (!Object.assign) {
-  Object.assign = (target, source) => {
-    Object.keys(source).forEach(key => {
-      target[key] = source[key]
-    })
-    return target
-  }
+function Construct() {}
+export const construct = value => {
+  Construct.prototype = value.constructor.prototype
+  return new Construct()
 }
 
-const require = (path) => window[path]
-const exports = window.Typed = {}
-
-import * as Immutable from 'immutable'
-
-const { Seq, Map } = Immutable
-const KeyedIterable = Immutable.Iterable.Keyed
-const IndexedIterable = Immutable.Iterable.Indexed
-const ImmutableRecordPrototype = Immutable.Record.prototype
-
-const $fields = Symbol.for("typed/fields")
-const $keys = Symbol.for("typed/field-names")
-const $name = Symbol.for("typed/name")
-const $isTyped = Symbol.for("typed/is-typed")
-const $default = Symbol.for("typed/default")
-const $read = Symbol.for("typed/read")
-const $parse = Symbol.for("typed/parse")
-const $write = Symbol.for("typed/write")
-const $store = Symbol.for("typed/store")
-const $ownerID = Symbol.for("typed/ownerID")
 const $type = Symbol.for("typed/type")
+const $store = Symbol.for("typed/store")
+const $empty = Symbol.for("typed/empty")
 
-const DELETE = 'delete'
+const $maybe = Symbol.for("typed/type/maybe")
+const $default = Symbol.for("typed/type/default")
+const $label = Symbol.for("typed/type/label")
 
-export class Typed extends Iterable {
-  [$blank]() {
-    return Object.create(this.constructor.prototype)
-  }
-  [$init]() {
-    return Object.create(this.constructor.prototype,
-                         {[$store]: new Map()}).asMutable()
-  }
-  [$step](result, [key, value]) {
-    return this.set(key, value)
-  }
-  [$result](result) {
-    return result.asImmutable()
-  }
-  constructor() {
-    class TypedType extends Typed {
-      constructor(data) {
-        const result = Typed.prototype[$init]()
-        Typed.prototype[$write](data, result)
-        return Typed.prototype[$result](result)
-      }
-    }
-  }
-}
-Typed.prototype[$isTyped] = true
+const $init = Symbol.for("transducer/init")
+const $result = Symbol.for("transducer/result")
+const $step = Symbol.for("transducer/step")
+const $read = Symbol.for("typed/type/read")
+const $parse = Symbol.for("typed/type/parse")
+const $typeName = Symbol("typed/type/name")
+const $typeSignature = Symbol("typed/type/signature")
 
-export class TypedRecord extends Typed {
-  constructor(descriptor) {
-    if (descriptor && typeof(descriptor) === "object") {
-      const fields = Object.create(null)
-      const keys = Object.keys(descriptor)
-      const size = keys.length
-
-      if (size > 0) {
-        const properties = {
-          size: {value: size},
-          [$keys]: {value: keys},
-          [$fields]: {value: fields},
-          [$name]: {value: name}
-        }
-
-        let index = 0
-        while (index < size) {
-          const key = keys[index]
-          const field = typeof(descriptor[key]) !== "function" ? descriptor[key] :
-                        descriptor[key] ? descriptor[key].prototype :
-                        descriptor[key]
-
-          if (field && field[$isTyped]) {
-            fields[key] = field
-            properties[key] = {
-              get: function() {
-                var value = this.get(key)
-                Object.defineProperty(this, key, {value: value})
-                return value
-              }
-            }
-          } else {
-            throw TypeError(`Invalid descriptor for the "${key}" field`)
-          }
-
-          index = index + 1
-        }
-
-        class RecordType extends TypedRecord {
-          constructor(structure) {
-            const result = prototype[$read](structure)
-            if (result instanceof TypeError) {
-              throw result
-            }
-
-            return result
-          }
-        }
-        const prototype = RecordType.prototype
-
-        return RecordType
-      } else {
-        throw TypeError(`Strucutre descriptor passed to Typed.Record  must contain at least on field`)
-      }
-    } else {
-      throw TypeError(`Typed.Record must be passed a structure descriptor`)
-    }
-  }
-
-  [$init]() {
-    return Object.create(this.constructor.prototype,
-                         {[$store]: new Map()}).asMutable()
-  }
-
-  [$read](structure) {
-    const seq = Seq(structure)
-    const keys = this[$keys]
-    const fields = this[$fields]
-    const count = keys.length
-    let result, index = 0
-    while (index < count) {
-      const key = keys[index]
-      const field = fields[key]
-      const value = seq.get(key)
-      const entry = field[$read](value)
-
-      if (entry instanceof TypeError) {
-        return entry
-      }
-
-      result = this[$step](result || this[$init](), input)
-      index = index + 1
-    }
-
-    return this[$result](result)
-  }
-
-  has(key) {
-    return key in this[$fields]
-  }
-
-  get(key, defaultValue) {
-    if (!this.has(key)) {
-      return defaultValue;
-    }
-
-    return this[$store] ? this[$store].get(key, defaultValue) : defaultValue;
-  }
-
-  remove(key) {
-    return this[$fields][key] ? this.set(key, void(0)) : this
-  }
-
-  set(key, value) {
-    const field = this[$fields][key]
-
-    if (!field) {
-      throw TypeError(`Cannot set unknown field "${key}" on "${this.typeName()}"`)
-    }
-
-    const result = field[$read](value)
-
-    if (result instanceof TypeError) {
-      throw result
-    }
-
-    const store = this[$store] && this[$store].set(key, value)
-
-    if (this.__ownerID || store == this[$store]) {
-      return this
-    } else {
-      return this[$blank](store)
-    }
-  }
-
-  __iterator(type, reverse) {
-    return KeyedIterable(this[$fields]).map((_, key) => this.get(key)).__iterator(type, reverse);
-  }
-
-  __iterate(fn, reverse) {
-    return KeyedIterable(this[$fields]).map((_, key) => this.get(key)).__iterate(fn, reverse);
-  }
-}
-
-
-export class Record extends Immutable.Record {
-  static toString() {
-    const prototype = this.prototype
-    const keys = prototype[$keys]
-    const fields = prototype[$fields]
-    const body = keys ? keys.map(key => key + ': ' + fields[key]) : []
-    const source = 'Typed.Record({' + body.join(', ') + '})'
-
-    Object.defineProperty(this, 'toString', {value: () => source})
-
-
-    return source
-  }
-  static [$read](structure) {
-    const result = this[$parse](structure, this)
-    return result instanceof TypeError ? result :
-           this[$write](result)
-  }
-  static [$write](store) {
-    return Object.create(this.prototype, {
-      [$store]: {value: store}
-    })
-  }
-  static [$parse](structure) {
-    const seq = Seq(structure)
-    const keys = this[$keys]
-    const fields = this[$fields]
-    const count = keys.length
-    let index = 0
-    let store
-    while (index < count) {
-      const key = keys[index]
-      const value = fields[key][$read](seq.get(key))
-
-      if (value instanceof TypeError) {
-        return TypeError(`Invalid value for "${key}" field:\n ${value.message}`)
-      }
-
-      store = store || Map().asMutable()
-      store.set(key, value)
-      index = index + 1
-    }
-    return store.asImmutable()
-  }
-  constructor(descriptor, name) {
-    if (descriptor && typeof(descriptor) === "object") {
-      const fields = Object.create(null)
-      const keys = Object.keys(descriptor)
-      const size = keys.length
-
-      if (size > 0) {
-        const properties = {
-          size: {value: size},
-          [$keys]: {value: keys},
-          [$fields]: {value: fields},
-          [$name]: {value: name}
-        }
-
-        let index = 0
-        while (index < size) {
-          const key = keys[index]
-          const field = descriptor[key]
-
-          if (field && field[$isTyped]) {
-            fields[key] = field
-            properties[key] = {
-              get: function() {
-                var value = this.get(key)
-                Object.defineProperty(this, key, {value: value})
-                return value
-              }
-            }
-          } else {
-            throw TypeError(`Invalid descriptor for the "${key}" field`)
-          }
-
-          index = index + 1
-        }
-
-        const RecordType = function(structure) {
-          const result = RecordType[$parse](structure)
-
-          if (result instanceof TypeError) {
-            throw result
-          }
-
-          if (this instanceof RecordType) {
-            this[$store] = result
-          } else {
-            return RecordType[$write](result)
-          }
-        }
-        RecordType.toString = Record.toString
-        RecordType[$keys] = keys
-        RecordType[$fields] = fields
-        RecordType[$write] = Record[$write]
-        RecordType[$parse] = Record[$parse]
-        RecordType[$read] = Record[$read]
-        RecordType[$isTyped] = true
-
-        properties.constructor = {value: RecordType}
-        RecordType.prototype = Object.create(RecordPrototype, properties)
-
-        return RecordType
-      } else {
-        throw TypeError(`Strucutre descriptor passed to Typed.Record  must contain at least on field`)
-      }
-    } else {
-      throw TypeError(`Typed.Record must be passed a structure descriptor`)
-    }
-  }
-  toString() {
-    const typeName = this[$name] || this.constructor.toString()
-    return this.__toString(typeName + '({', '})')
-  }
-
-  has(key) {
-    return key in this[$fields]
-  }
-
-  get(key, defaultValue) {
-    if (!this.has(key)) {
-      return defaultValue;
-    }
-
-    return this[$store] ? this[$store].get(key, defaultValue) : defaultValue;
-  }
-
-  remove(key) {
-    return this[$fields][key] ? this.set(key, void(0)) : this
-  }
-
-  set(key, value) {
-    const field = this[$fields][key]
-
-    if (!field) {
-      throw TypeError(`${this.constructor} has no "${key}" field`)
-    }
-
-    const value = field[$read](value)
-
-    if (value instanceof TypeError) {
-      throw value
-    }
-
-    if (!this.has(key)) {
-      throw new Error('Cannot set unknown key "' + k + '" on ' + this.constructor);
-    }
-
-    const store = this[$store] && this[$store].set(key, value)
-
-    if (this.__ownerID || store == this[$store]) {
-      return this
-    }
-
-    return this.constructor[$write](store)
-  }
-
-  __iterator(type, reverse) {
-    return KeyedIterable(this[$fields]).map((_, key) => this.get(key)).__iterator(type, reverse);
-  }
-
-  __iterate(fn, reverse) {
-    return KeyedIterable(this[$fields]).map((_, key) => this.get(key)).__iterate(fn, reverse);
-  }
-}
-const RecordPrototype = Record.prototype
-RecordPrototype.ImmutableRecordPrototypeSet = ImmutableRecordPrototype.set
-
-
-export class Field {
-  constructor(name, parse, defaultValue) {
-    const FieldType = function(defaultValue) {
-      if (!(this instanceof FieldType)) {
-        return new FieldType(defaultValue)
-      }
-
+export const Typed = function(label, parse, defaultValue) {
+  class ValueType extends Type {
+    constructor(defaultValue) {
       this[$default] = defaultValue
     }
+  }
 
+  const prototype = ValueType.prototype
+  prototype[$default] = defaultValue
+  prototype[$parse] = parse
+  prototype[$label] = label
 
-    FieldType[$isTyped] = true
-    FieldType[$read] = Field[$read]
-    FieldType.toString = Field.toString
-    FieldType.prototype = Object.create(FieldPrototype, {
-      constructor: {value: FieldType},
-      [$name]: {value: name},
-      [$parse]: {value: parse},
-      [$default]: {value: defaultValue, writable: true}
-    })
+  const TypedValue = function(defaultValue) {
+    return defaultValue === void(0) ? prototype :
+    new ValueType(defaultValue)
+  }
+  TypedValue.prototype = prototype
 
-    return FieldType
+  return TypedValue
+}
+
+Typed.label = $label
+Typed.defaultValue = $default
+Typed.read = $read
+Typed.typeName = $typeName
+Typed.typeSignature = $typeSignature
+
+Typed.type = $type
+Typed.store = $store
+Typed.init = $init
+Typed.result = $result
+Typed.step = $step
+Typed.DELETE = "delete"
+Typed.empty = $empty
+
+const typeName = type => type[$typeName]()
+const typeSignature = type => type[$typeSignature]()
+
+export class Type {
+  constructor() {}
+  [Typed.read](value=this[$default]) {
+    return this[$parse](value)
   }
-  static toString() {
-    return this.prototype.toString()
+  [Typed.parse](value) {
+    throw TypeError(`Type implementation must implement "[read.symbol]" method`)
   }
-  static [$read](value) {
-    return this.prototype[$read](value)
-  }
-  get [$isTyped]() {
-    Object.defineProperty(this, $isTyped, {
-      value: true
-    })
-    return true
-  }
-  [$read](value=this[$default]) {
-    return this[$parse](value, this)
-  }
-  toString() {
+  [Typed.typeName]() {
+    const label = this[$label]
     const defaultValue = this[$default]
-    const name = this[$name]
-    const value = defaultValue === void(0) ? name :
-                  `${name}(${defaultValue})`
-
-//    Object.defineProperty(this, 'toString', {value: () => value})
-
-    return value
+    return defaultValue === void(0) ? label : `${label}(${JSON.stringify(defaultValue)})`
   }
 }
-const FieldPrototype = Field.prototype
+
+const ObjectPrototype = Object.prototype
+
+// Returns `true` if given `x` is a JS array.
+const isArray = Array.isArray ||
+  x => ObjectPrototype.toString.call(x) === '[object Array]'
+
+// Returns `true` if given `x` is a regular expression.
+const isRegExp = x =>
+  ObjectPrototype.toString.call(x) === '[object RegExp]'
 
 
-export const Number = Field('Typed.Number', value =>
+export const typeOf = (x, type=typeof(x)) =>
+  x === void(0) ? x :
+  x === null ? x :
+  x[$read] ? x :
+  (x.prototype && x.prototype[$read]) ? x.prototype :
+  type === "number" ? new Typed.Number(x) :
+  type === "string" ? new Typed.String(x) :
+  type === "boolean" ? new Typed.Boolean(x) :
+  type === "symbol" ? new Typed.Symbol(x) :
+  isArray(x) ? Typed.Array(x) :
+  isRegExp(x) ? new Typed.RegExp(x) :
+  x === String ? Typed.String.prototype :
+  x === Number ? Typed.Number.prototype :
+  x === Boolean ? Typed.Boolean.prototype :
+  x === RegExp ? Typed.RegExp.prototype :
+  x === Array ? Typed.Array.prototype :
+  x === Symbol ? Typed.Symbol.prototype :
+  x === Date ? Typed.Date.prototype :
+  Any;
+
+export const Any = Typed("Any", value => value)()
+Typed.Any = Any
+
+Typed.Number = Typed("Number", value =>
   typeof(value) === "number" ? value :
-  TypeError('Can not use non number value for a number field'))
-Record.Number = Number
+  TypeError(`"${value}" is not a number`))
 
-export const String = Field('Typed.String', value =>
+Typed.String = Typed("String", value =>
   typeof(value) === "string" ? value :
-  TypeError('Can not use non string value for string field'))
-Record.String = String
+  TypeError(`"${value}" is not a string`))
 
+Typed.Symbol = Typed("Symbol", value =>
+  typeof(value) === "symbol" ? value :
+  TypeError(`"${value}" is not a symbol`))
 
-export const Boolean = Field('Typed.Boolean', value =>
+Typed.Array = Typed("Array", value =>
+  isArray(value) ? value :
+  TypeError(`"${value}" is not an array`))
+
+Typed.RegExp = Typed("RegExp", value =>
+  value instanceof RegExp ? value :
+  TypeError(`"${value}" is not a regexp`))
+
+Typed.Boolean = Typed("Boolean", value =>
   value === true ? true :
   value === false ? false :
-  TypeError('Can not use non boolean value for boolean field'))
-Record.Boolean = Boolean
+  TypeError(`"${value}" is not a boolean`))
 
+class MaybeType extends Type {
+  constructor(type) {
+    this[$type] = type
+  }
+  [Typed.typeName]() {
+    return `Maybe(${this[$type][$typeName]()})`
+  }
+  [Typed.read](value) {
+    const result = value == null ? null : this[$type][$read](value)
+
+    return !(result instanceof TypeError) ? result :
+           TypeError(`"${value}" is not nully nor it is of ${this[$type][$typeName]()} type`)
+  }
+}
 
 export const Maybe = Type => {
-  if (!(Type && Type[$isTyped])) {
-    throw TypeError('Maybe must be created with a valid Typed.Field')
+  const type = typeOf(Type)
+  if (type === Any) {
+    throw TypeError(`${Type} is not a valid type`)
   }
 
-  return Field('Maybe(' + Type + ')', value => {
-    const result = value == null ? null : Type[$read](value)
-    if (result instanceof TypeError) {
-      return TypeError('Value must be nully or of a ' + Type + ' type')
-    }
-    return result
-  })
+  return type[$maybe] || (type[$maybe] = new MaybeType(type))
 }
-Record.Maybe = Maybe
+Maybe.Type = MaybeType
 
 
-export const Union = (...Types) => {
-  const count = Types.length;
-  let index = 0;
-  while (index < count) {
-    const Type = Types[index]
-    if (!(Type && Type[$isTyped])) {
-      throw TypeError('Union must be created witha valid Typed.Field')
-      index = index + 1
-    }
+class UnionType extends Type {
+  constructor(variants) {
+    this[$type] = variants
   }
-
-  return Field('Union(' + Types.join(', ') + ')', (value, Type) => {
+  [Typed.typeName]() {
+    return `Union(${this[$type].map(typeName).join(', ')})`
+  }
+  [Typed.read](value) {
+    const variants = this[$type]
+    const count = variants.length
     let index = 0
     while (index < count) {
-      const result = Types[index][$read](value)
+      const result = variants[index][$read](value)
       if (!(result instanceof TypeError)) {
         return result
       }
       index = index + 1
     }
-    return TypeError(`"${value}" is not type of ${Type}`)
-  })
+
+    return TypeError(`"${value}" does not satisfy ${this[$typeName]()} type`)
+  }
 }
-Record.Union = Union
 
+// Returns `xs` excluding any values that are included in `ys`.
+const subtract = (xs, ys) =>
+  xs.filter(x => ys.indexOf(x) < 0)
 
-export const Range = (from, to=+Infinity, defaultValue) =>
-  Field(`Typed.Number.Range(${from}..${to})`, value => {
-    if (typeof(value) !== 'number') {
-      return TypeError(`${value} is not a number`)
+// Returns array including all values from `xs` and all values from
+// `ys` that aren't already included in `xs`. It will also attempt
+// to return either `xs` or `ys` if one of them is a superset of other.
+// return `xs` or `ys` if
+const union = (xs, ys) => {
+  // xs can be superset only if it contains more items then
+  // ys. If that's a case find items in ys that arent included
+  // in xs. If such items do not exist return back `xs` otherwise
+  // return concatination of xs with those items.
+  // those items
+  if (xs.length > ys.length) {
+    const diff = subtract(ys, xs)
+    return diff.length === 0 ? xs : xs.concat(diff)
+  }
+  // if number of items in xs is not greater than number of items in ys
+  // then either xs is either subset or equal of `ys`. There for we find
+  // ys that are not included in `xs` if such items aren't found ys is
+  // either superset or equal so just return ys otherwise return concatination
+  // of those items with `ys`.
+  else {
+    const diff = subtract(xs, ys)
+    return diff.length === 0 ? ys : diff.concat(ys)
+  }
+}
+
+export const Union = (...Types) => {
+  const count = Types.length
+
+  if (count === 0) {
+    throw TypeError(`Union must be of at at least one type`)
+  }
+
+  let variants = null
+  let type = null
+  let index = 0;
+  while (index < count) {
+    const variant = typeOf(Types[index])
+    // If there is `Any` present than union is also `Any`.
+    if (variant === Any) {
+      return Any
     }
+    // If this is the first type we met than we assume it's the
+    // one that satisfies all types.
+    if (!variants) {
+      type = variant
+      variants = type instanceof UnionType ? type[$type] : [variant]
+    } else if (variants.indexOf(variant) < 0) {
+      // If current reader is of union type
+      if (variant instanceof UnionType) {
+        const variantUnion = union(variants, variant[$type])
+
+        // If `reader.readers` matches union of readers, then
+        // current reader is a superset so we use it as a type
+        // that satisfies all types.
+        if (variantUnion === variant[$type]) {
+          type = variant
+          variants = variantUnion
+        }
+        // If current readers is not the union than it does not
+        // satisfy currenty reader. There for we update readers
+        // and unset a type.
+        else if (variantUnion !== variants) {
+          type = null
+          variants = variantUnion
+        }
+      } else {
+        type = null
+        variants.push(variant)
+      }
+    }
+
+    index = index + 1
+  }
+
+  return type ? type : new UnionType(variants)
+}
+Union.Type = UnionType
+
+
+Typed.Number.Range = (from, to=+Infinity, defaultValue) =>
+  Typed(`Typed.Number.Range(${from}..${to})`, value => {
+    if (typeof(value) !== 'number') {
+      return TypeError(`"${value}" is not a number`)
+    }
+
     if (!(value >= from && value <= to)) {
-      return TypeError(`${value} isn't in the range of ${from}..${to}`)
+      return TypeError(`"${value}" isn't in the range of ${from}..${to}`)
     }
 
     return value
   }, defaultValue)
-Number.Range = Range
-
-// Examples
-
-const Point = Record({
-  x: Number(0),
-  y: Number(0)
-}, 'Point')
-
-const Line = Record({
-  start: Point,
-  end: Point
-}, 'Line')
-
-
-const Color = Record({
-  red: Number.Range(0, 255, 0),
-  green: Number.Range(0, 255, 0),
-  blue: Number.Range(0, 255, 0),
-  alpha: Maybe(Number.Range(0, 100))
-}, 'Color')
-
-
-const Status = Record({
-  readyState: Union(Number, String)
-})
-
-
-const _toString = Symbol("toString")
-const _set = Symbol("set")
-const _clear = Symbol("clear")
-const _push = Symbol("push")
-const _pop = Symbol("pop")
-const _unshift = Symbol("unshift")
-const _shift = Symbol("shift")
-const _setSize = Symbol("setSize")
-const _slice = Symbol("slice")
-const _splice = Symbol("splice")
-const ___ensureOwner = Symbol("__ensureOwner")
-
-const TypedList = Immutable.List
-TypedListPrototype = TypedList.prototype
-
-TypedListPrototype[_toString] = TypedListPrototype.toString
-TypedListPrototype.toString = function() {
-  const type = this.constructor[$type]
-  if (type) {
-    const typeName = this.constructor[$name] || `Typed.List(${type})`
-    return this.__toString(typeName + '([', '])')
-  }
-  return this[_toString]()
-}
-TypedListPrototype[_set] = TypedListPrototype.set
-TypedListPrototype.set = function(key, value) {
-  const type = this.constructor[$type]
-
-  if (type) {
-    const data = type[$read](value)
-
-    if (data instanceof TypeError) {
-      throw data
-    }
-
-    const result = this[_set](key, data)
-    result.constructor = this.constructor
-    return result
-  }
-
-  return this[_set](key, value)
-}
-TypedListPrototype[_clear] = TypedListPrototype.clear
-TypedListPrototype.clear = function() {
-  const result = this[_clear]()
-  if (this[$type]) {
-    const list = Object.create(TypedList.prototype)
-    list.constructor = this.constructor
-    list.size = result.size
-    list._origin = result._origin
-    list._capacity = result._capacity
-    list._level = result._level
-    list._root = result._root
-    list._tail = result._tail
-    list.__ownerID = result.__ownerID
-    list.__hash = result.__hash
-    list.__altered = result.__altered
-    return list
-  }
-  return result
-}
-TypedListPrototype[_push] = TypedListPrototype.push
-TypedListPrototype.push = function() {
-  const result = this[_push].apply(this, arguments)
-  result.constructor = this.constructor
-  return result
-}
-TypedListPrototype[_pop] = TypedListPrototype.pop
-TypedListPrototype.pop = function() {
-  const result = this[_pop]()
-  result.constructor = this.constructor
-  return result
-}
-TypedListPrototype[_unshift] = TypedListPrototype.unshift
-TypedListPrototype.unshift = function() {
-  const result = this[_unshift].apply(this, arguments)
-  result.constructor = this.constructor
-  return result
-}
-TypedListPrototype[_shift] = TypedListPrototype.shift
-TypedListPrototype.shift = function() {
-  const result = this[_shift]()
-  result.constructor = this.constructor
-  return result
-}
-TypedListPrototype[_slice] = TypedListPrototype.slice
-TypedListPrototype.slice = function(begin, end) {
-  const result = this[_slice](begin, end)
-  result.constructor = this.constructor
-  return result
-}
-
-/*
-TypedListPrototype[_splice] = TypedListPrototype.splice
-TypedListPrototype.splice = function() {
-  const result = this[_splice].apply(this, arguments)
-  result.constructor = this.constructor
-  return result
-}
-*/
-
-TypedListPrototype[___ensureOwner] = TypedListPrototype.__ensureOwner
-TypedListPrototype.__ensureOwner = function(ownerID) {
-  const result = this[___ensureOwner](ownerID)
-  result.constructor = this.constructor
-  return result
-}
-
-
-
-
-
-class List extends TypedList {
-  constructor(Type, name) {
-    if (Type && Type[$isTyped]) {
-
-      const ListType = function(input) {
-        const result = ListType[$parse](input)
-
-        if (result instanceof TypeError) {
-          throw result
-        }
-
-        result.constructor = ListType
-
-        return result
-      }
-      ListType.prototype = TypedListPrototype
-      ListType.of = TypedList.of
-      ListType.toString = List.toString
-      ListType[$type] = Type
-      ListType[$name] = name
-      ListType[$write] = List[$write]
-      ListType[$parse] = List[$parse]
-      ListType[$read] = List[$read]
-      ListType[$isTyped] = true
-
-      return ListType
-    } else {
-      throw TypeError(`Typed.List must be passed a valid type`)
-    }
-  }
-  static toString() {
-    const Type = this[$type]
-    return `Typed.List(${Type})`
-  }
-  static [$read](input) {
-    const value = this[$parse](input, this)
-    return value instanceof TypeError ? value :
-           this[$write](value)
-  }
-  static [$write](value) {
-    value.constructor = this
-    return value
-  }
-  static [$parse](input) {
-    const seq = Seq(input)
-    const type = this[$type]
-    const count = seq.count()
-    let index = 0
-    const list = TypedList().asMutable()
-    while (index < count) {
-      const value = type[$read](seq.get(index))
-
-      if (value instanceof TypeError) {
-        return TypeError(`Invalid item type for a list:\n ${value.message}`)
-      }
-
-      list.set(index, value)
-      index = index + 1
-    }
-
-    return list.asImmutable()
-  }
-}
-
-const ListPrototype = List.prototype
-
-const Indexed = Immutable.Iterable.Indexed
-
-export class Tuple extends Immutable.Iterable.Indexed {
-  static toString() {
-    const prototype = this.prototype
-    const fields = prototype[$fields]
-    const source = 'Typed.Tuple(' + fields.join(', ') + ')'
-
-    Object.defineProperty(this, 'toString', {value: () => source})
-
-
-    return source
-  }
-  static [$read](structure) {
-    const result = this[$parse](structure, this)
-    return result instanceof TypeError ? result :
-           this[$write](result)
-  }
-  static [$write](store) {
-    return Object.create(this.prototype, {
-      [$store]: {value: store}
-    })
-  }
-  static [$parse](structure) {
-    const seq = Immutable.Seq(structure)
-    const fields = this[$fields]
-    const count = fields.length
-    let index = 0
-    let store
-    while (index < count) {
-      const value = fields[index][$read](seq.get(index))
-
-      if (value instanceof TypeError) {
-        return TypeError(`Invalid value for "${index}" item:\n ${value.message}`)
-      }
-
-      store = store || Immutable.List().asMutable()
-      store.set(index, value)
-      index = index + 1
-    }
-    return store.asImmutable()
-  }
-  constructor(...types) {
-    const fields = []
-    const size = types.length
-
-    if (size > 0) {
-      const properties = {
-        size: {value: size},
-        length: {value: size},
-        [$fields]: {value: fields},
-        [$name]: {value: null}
-      }
-
-      let index = 0
-      while (index < size) {
-        const field = types[index]
-
-        if (field && field[$isTyped]) {
-          fields[index] = field
-          properties[index] = {
-            get: function() {
-              var value = this.get(index)
-              Object.defineProperty(this, index, {value: value})
-              return value
-            }
-          }
-        } else {
-          throw TypeError(`Invalid descriptor for the "${index}" field`)
-        }
-
-        index = index + 1
-      }
-
-      const TupleType = function(...structures) {
-        const result = TupleType[$parse](structures)
-
-        if (result instanceof TypeError) {
-          throw result
-        }
-
-        if (this instanceof TupleType) {
-          this[$store] = result
-        } else {
-          return TupleType[$write](result)
-        }
-      }
-      TupleType.toString = Tuple.toString
-      TupleType[$fields] = fields
-      TupleType[$write] = Tuple[$write]
-      TupleType[$parse] = Tuple[$parse]
-      TupleType[$read] = Tuple[$read]
-      TupleType[$isTyped] = true
-
-      properties.constructor = {value: TupleType}
-      TupleType.prototype = Object.create(TuplePrototype, properties)
-
-      return TupleType
-    } else {
-      throw TypeError(`Typed.Tuple must be passed at least on field descriptor`)
-    }
-  }
-  toString() {
-    const typeName = this[$name] || this.constructor.toString()
-    return this.__toString(typeName + '(', ')')
-  }
-
-  __iterator(type, reverse) {
-    return Indexed(this[$fields]).map((_, key) => this.get(key)).__iterator(type, reverse);
-  }
-
-  __iterate(fn, reverse) {
-    return Indexed(this[$fields]).map((_, key) => this.get(key)).__iterate(fn, reverse);
-  }
-}
-const TuplePrototype = Tuple.prototype
-TuplePrototype.has = RecordPrototype.has
-TuplePrototype.get = RecordPrototype.get
-TuplePrototype.set = RecordPrototype.set
-TuplePrototype.clear = RecordPrototype.clear
-TuplePrototype.remove = RecordPrototype.remove
-TuplePrototype.wasAltered = RecordPrototype.wasAltered
-TuplePrototype.__ensureOwner = RecordPrototype.__ensureOwner
-
-
-TuplePrototype[DELETE] = RecordPrototype.remove;
-TuplePrototype.deleteIn =
-TuplePrototype.removeIn = RecordPrototype.removeIn;
-TuplePrototype.merge = RecordPrototype.merge;
-TuplePrototype.mergeWith = RecordPrototype.mergeWith;
-TuplePrototype.mergeIn = RecordPrototype.mergeIn;
-TuplePrototype.mergeDeep = RecordPrototype.mergeDeep;
-TuplePrototype.mergeDeepWith = RecordPrototype.mergeDeepWith;
-TuplePrototype.mergeDeepIn = RecordPrototype.mergeDeepIn;
-TuplePrototype.setIn = RecordPrototype.setIn;
-TuplePrototype.update = RecordPrototype.update;
-TuplePrototype.updateIn = RecordPrototype.updateIn;
-TuplePrototype.withMutations = RecordPrototype.withMutations;
-TuplePrototype.asMutable = RecordPrototype.asMutable;
-TuplePrototype.asImmutable = RecordPrototype.asImmutable;
-
-

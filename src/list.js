@@ -1,5 +1,4 @@
-import {Typed} from "./core"
-import {Reader, Union, Any} from "./reader"
+import {Typed, Type, Union, Any, typeOf, construct} from "./typed"
 import * as Immutable from 'immutable'
 
 
@@ -7,18 +6,18 @@ const ImmutableList = Immutable.List
 const {Indexed} = Immutable.Iterable
 
 const $store = Typed.store
-const $construct = Typed.construct
-const $reader = Typed.reader
+const $type = Typed.type
 const $read = Typed.read
 const $step = Typed.step
 const $init = Typed.init
 const $result = Typed.result
 const $label = Typed.label
+const $typeName = Typed.typeName
 const $empty = Typed.empty
 
 
 const change = (list, f) => {
-  const result = list.__ownerID ? list : list[$construct]()
+  const result = list.__ownerID ? list : construct(list)
   const store = f(list[$store])
   result[$store] = store
   result.size = store.size
@@ -29,12 +28,16 @@ const clear = target => target.clear()
 const pop = target => target.pop()
 const shift = target => target.shift()
 
-class TypeInferer extends Reader {
-  toTypeName() {
+class TypeInferer extends Type {
+  [Typed.typeName]() {
     return 'TypeInferer'
   }
   [Typed.read](value) {
-    const type = Reader.for(value).constructor.prototype
+    // typeOf usually creates type for the value with that
+    // value being a default. For type inference we should
+    // actually use a base type instead of type with default
+    // there for we use prototype of the constructor.
+    const type = typeOf(value).constructor.prototype
     this.type = this.type ? Union(this.type, type) : type
     return value
   }
@@ -42,24 +45,21 @@ class TypeInferer extends Reader {
 
 class TypeInferedList extends Immutable.List {
   static from(list) {
-    const result = this.prototype[$construct]()
+    const result = construct(this.prototype)
     result[$store] = list[$store]
     return result
   }
   constructor(value) {
     return TypeInferedList.prototype[$read](value)
   }
-  [Typed.construct]() {
-    return Object.create(this.constructor.prototype)
-  }
   [Typed.init]() {
-    const result = this[$construct]().asMutable()
-    result[$reader] = new TypeInferer()
+    const result = construct(this).asMutable()
+    result[$type] = new TypeInferer()
     return result
   }
   [Typed.result](result) {
     const list = result.asImmutable()
-    list[$reader] = result[$reader].type
+    list[$type] = result[$type].type
 
     return list
   }
@@ -69,7 +69,7 @@ class TypeInferedList extends Immutable.List {
 
     if (input === null || input === void(0)) {
       if (!Type[$empty]) {
-        const result = this[$construct]()
+        const result = construct(this)
         result[$store] = ImmutableList()
         result.size = 0
         Type[$empty] = result
@@ -94,17 +94,12 @@ class TypeInferedList extends Immutable.List {
     return change(result, (store=ImmutableList()) => store.set(key, value))
   }
 
-  toTypeSignature() {
-    const reader = this[$reader]
-    return `Typed.List(${reader.toTypeName()})`
-  }
-
-  toTypeName() {
-    return this[$label] || this.toTypeSignature()
+  [Typed.typeName]() {
+    return this[$label] || `Typed.List(${this[$type][$typeName]()})`
   }
 
   toString() {
-    return this.__toString(this.toTypeName() + '([', '])')
+    return this.__toString(this[$typeName]() + '([', '])')
   }
 
   has(key) {
@@ -133,7 +128,7 @@ class TypeInferedList extends Immutable.List {
       throw TypeError(`Index "${index}" is out of bound`)
     }
 
-    const result = this[$reader][$read](value)
+    const result = this[$type][$read](value)
 
     if (result instanceof TypeError) {
       throw TypeError(`Invalid value: ${result.message}`)
@@ -143,10 +138,10 @@ class TypeInferedList extends Immutable.List {
   }
 
   push(...values) {
-    const reader = this[$reader]
+    const type = this[$type]
     const items = []
     for (let value of values) {
-      const result = reader[$read](value)
+      const result = type[$read](value)
 
       if (result instanceof TypeError) {
         throw TypeError(`Invalid value: ${result.message}`)
@@ -162,10 +157,10 @@ class TypeInferedList extends Immutable.List {
     return change(this, pop)
   }
   unshift(...values) {
-    const reader = this[$reader]
+    const type = this[$type]
     const items = []
     for (let value of values) {
-      const result = reader[$read](value)
+      const result = type[$read](value)
 
       if (result instanceof TypeError) {
         throw TypeError(`Invalid value: ${result.message}`)
@@ -198,7 +193,7 @@ class TypeInferedList extends Immutable.List {
   __ensureOwner(ownerID) {
     const result = this.__ownerID === ownerID ? this :
                    !ownerID ? this :
-                   this[$construct]()
+                   construct(this)
 
     result.__ownerID = ownerID
     result[$store] = this[$store] ? this[$store].__ensureOwner(ownerID) :
@@ -219,7 +214,7 @@ TypeInferedList.prototype[Typed.DELETE] = TypeInferedList.prototype.remove;
 class TypedList extends TypeInferedList {
   constructor() {}
   [Typed.init]() {
-    return this[$construct]().asMutable()
+    return construct(this).asMutable()
   }
   [Typed.result](result) {
     return result.asImmutable()
@@ -229,8 +224,8 @@ class TypedList extends TypeInferedList {
       return this
     } else {
       const result = TypeInferedList.from(this).map(mapper, context)
-      if (result[$reader] === this[$reader]) {
-        const list = this[$construct]()
+      if (result[$type] === this[$type]) {
+        const list = construct(this)
         list[$store] = result[$store]
         list.size = result.size
         return list
@@ -241,19 +236,19 @@ class TypedList extends TypeInferedList {
   }
 }
 
-export const List = function(type, label) {
-  if (type === void(0)) {
+export const List = function(descriptor, label) {
+  if (descriptor === void(0)) {
     throw TypeError("Typed.List must be passed a type descriptor")
   }
 
-  if (type === Any) {
+  if (descriptor === Any) {
     return Immutable.List
   }
 
-  const reader = Reader.for(type)
+  const type = typeOf(descriptor)
 
-  if (reader === Any) {
-    throw TypeError("Typed.List was passed an invalid type descriptor: ${type}")
+  if (type === Any) {
+    throw TypeError("Typed.List was passed an invalid type descriptor: ${descriptor}")
   }
 
   const ListType = function(value) {
@@ -285,7 +280,7 @@ export const List = function(type, label) {
   ListType.of = ImmutableList.of
   ListType.prototype = Object.create(ListPrototype, {
     constructor: {value: ListType},
-    [$reader]: {value: reader},
+    [$type]: {value: type},
     [$label]: {value: label}
   })
 

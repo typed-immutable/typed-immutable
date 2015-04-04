@@ -1,8 +1,7 @@
 import test from "./test"
 import * as Immutable from "immutable"
 import {Record} from "../record"
-import {Tuple} from "../tuple"
-import {Reader, Union, Range, Maybe} from "../reader"
+import {Typed, typeOf, Union, Range, Maybe} from "../typed"
 
 test("define a constructor", assert => {
   const MyType = Record({a: Number(1),
@@ -185,7 +184,7 @@ test("flat record without defaults", assert => {
 test("stringify on record", assert => {
   const UnlabledPoint = Record({x: Number, y: Number})
 
-  assert.equal(UnlabledPoint({x:0, y:0}).toTypeName(),
+  assert.equal(UnlabledPoint({x:0, y:0})[Typed.typeName](),
                `Typed.Record({x: Number, y: Number})`)
 
   assert.equal(UnlabledPoint({x:4, y:9}) + "",
@@ -193,7 +192,7 @@ test("stringify on record", assert => {
 
   const LabledPoint = Record({x: Number, y: Number}, "Point")
 
-  assert.equal(LabledPoint({x:0, y:0}).toTypeName(),
+  assert.equal(LabledPoint({x:0, y:0})[Typed.typeName](),
                "Point")
 
   assert.equal(LabledPoint({x:4, y:9}) + "",
@@ -201,7 +200,7 @@ test("stringify on record", assert => {
 
   const PointDefaults = Record({x: Number(0), y: Number(7)})
 
-  assert.equal(PointDefaults({x:5, y:3}).toTypeName(),
+  assert.equal(PointDefaults({x:5, y:3})[Typed.typeName](),
                `Typed.Record({x: Number(0), y: Number(7)})`)
 
   assert.equal(PointDefaults({x:4, y:9}) + "",
@@ -209,7 +208,7 @@ test("stringify on record", assert => {
 
   const LabledPointDefaults = Record({x: Number(5), y: Number(9)}, "Point")
 
-  assert.equal(LabledPointDefaults({x:0, y:0}).toTypeName(),
+  assert.equal(LabledPointDefaults({x:0, y:0})[Typed.typeName](),
                "Point")
 
   assert.equal(LabledPointDefaults({x:4, y:9}) + "",
@@ -513,10 +512,10 @@ test("Maybe type", assert => {
 
 test("Range type", assert => {
   const Color = Record({
-    red: Range(0, 255, 0),
-    green: Range(0, 255, 0),
-    blue: Range(0, 255, 0),
-    alpha: Maybe(Range(0, 100))
+    red: Typed.Number.Range(0, 255, 0),
+    green: Typed.Number.Range(0, 255, 0),
+    blue: Typed.Number.Range(0, 255, 0),
+    alpha: Maybe(Typed.Number.Range(0, 100))
   }, "Color")
 
   assert.equal(Color() + "",
@@ -525,7 +524,7 @@ test("Range type", assert => {
   assert.throws(_ => Color({alpha: -10}),
                 /"-10" is not nully/)
   assert.throws(_ => Color({alpha: -10}),
-                /of Number.Range\(0\.\.100\) type/)
+                /of Typed.Number.Range\(0\.\.100\) type/)
 
   assert.equal(Color({alpha: 20}) + "",
                `Color({ "red": 0, "green": 0, "blue": 0, "alpha": 20 })`)
@@ -539,7 +538,7 @@ test("Union type", assert => {
 
 
   assert.throws(_ => Status(),
-                /"undefined" does not qualify Union\(Number, String\)/)
+                /"undefined" does not satisfy Union\(Number, String\)/)
 
   assert.equal(Status({readyState: "loading"}).toString(),
                `Typed.Record({readyState: Union(Number, String)})({ "readyState": "loading" })`)

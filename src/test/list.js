@@ -2,7 +2,7 @@ import test from "./test"
 import * as Immutable from "immutable"
 import {Record} from "../record"
 import {List} from "../list"
-import {Reader, Union, Range, Maybe} from "../reader"
+import {Typed, Union, Maybe} from "../typed"
 
 const NumberList = List(Number)
 const StringList = List(String)
@@ -126,7 +126,7 @@ test("create list from entries", assert => {
   const ns1 = NumberList.of(1, 2, 3, 4)
   assert.equal(ns1.toString(),
                "Typed.List(Number)([ 1, 2, 3, 4 ])")
-  assert.equal(ns1.toTypeName(),
+  assert.equal(ns1[Typed.typeName](),
                "Typed.List(Number)")
 
   assert.deepEqual(ns1.toJSON(),
@@ -518,17 +518,18 @@ test('can set at with in the bonds', assert => {
 })
 
 
-/*
+
 test('can contain a large number of indices', assert => {
   const input = Immutable.Range(0,20000)
   const numbers = NumberList(input)
   let iterations = 0
-  numbers.forEach(value => {
-    assert.equal(value, iterations)
+
+  assert.ok(numbers.every(value => {
+    const result = value === iterations
     iterations = iterations + 1
-  })
+    return result
+  }))
 })
-*/
 
 test('push inserts at highest index', assert => {
   const v0 = NumberList.of(1, 2, 3)
@@ -695,7 +696,7 @@ test('maps records to any', assert => {
   assert.ok(v0 instanceof Points)
   assert.notOk(v1 instanceof Points)
   assert.ok(v1 instanceof Immutable.List)
-  assert.equal(v1.toTypeName(), 'Typed.List(Any)')
+  assert.equal(v1[Typed.typeName](), 'Typed.List(Any)')
 
   assert.equal(v0.size, 3)
   assert.equal(v1.size, 3)

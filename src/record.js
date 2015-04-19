@@ -177,7 +177,7 @@ export const Record = function(descriptor, label) {
 
         if (fieldType) {
           type[key] = fieldType
-          properties[key] = {get:Getter(key), set:Setter(key)}
+          properties[key] = {get:Getter(key), set:Setter(key), enumerable: true}
         } else {
           throw TypeError(`Invalid field descriptor provided for a "${key}" field`)
         }

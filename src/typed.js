@@ -177,6 +177,15 @@ class UnionType extends Type {
     const count = variants.length
     let index = 0
     while (index < count) {
+      const variant = variants[index]
+      if (value instanceof variant.constructor) {
+        return value
+      }
+      index = index + 1
+    }
+
+    index = 0
+    while (index < count) {
       const result = variants[index][$read](value)
       if (!(result instanceof TypeError)) {
         return result

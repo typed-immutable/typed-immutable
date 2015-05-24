@@ -544,3 +544,19 @@ test("Union type", assert => {
                `Typed.Record({readyState: Union(Number, String)})({ "readyState": "loading" })`)
 
 })
+
+
+test("Union of similar records", assert => {
+  const Add = Record({id: Number(0)})
+  const Remove = Record({id: Number(0)})
+  const Action = Record({action: Union(Add, Remove)})
+
+  const add = Add()
+  const remove = Remove()
+  const ambigius = {id: 1}
+
+
+  assert.equal(Action({action: add}).action, add, "recognizes Add")
+  assert.equal(Action({action: remove}).action, remove, "recognizes Remove")
+  assert.ok(Action({action: ambigius}).action instanceof Add, "matches Add")
+})

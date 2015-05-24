@@ -31,7 +31,8 @@
   "scripts": {
     "test": "tap lib/test/*.js",
     "start": "babel --watch --modules umdStrict --source-maps-inline --out-dir ./lib ./src",
-    "prepublish": "babel --modules umdStrict --source-maps-inline --out-dir ./lib ./src"
+    "build": "babel --modules umdStrict --source-maps-inline --out-dir ./lib ./src",
+    "prepublish": "npm run build"
   },
   "dependencies": {
     "immutable": "^3.7.0"

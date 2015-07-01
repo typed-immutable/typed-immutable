@@ -35,11 +35,10 @@
     "prepublish": "npm run build"
   },
   "dependencies": {
-    "immutable": "^3.7.0"
+    "immutable": "3.7.0"
   },
   "devDependencies": {
-    "babel": "^4.7.4",
-    "immutable": "^3.6.4",
+    "babel": "4.7.6",
     "tap": "~0.4.8",
     "tape": "~2.3.2"
   }

@@ -39,3 +39,42 @@ test("reading records", assert => {
   assert.deepEqual(v3.toJSON(), {x:0,y:10})
   assert.deepEqual(v4.toJSON(), {x:1,y:2})
 })
+
+
+const identity = x => x
+test("identical on no change", assert => {
+  var p1 = Point({x: 5});
+
+  assert.equal(p1, p1.set('x', 5));
+  assert.equal(p1, p1.merge({x: 5}));
+  assert.equal(p1, p1.merge({y: 0}));
+  assert.equal(p1, p1.merge({x: 5, y: 0}));
+  assert.equal(p1, p1.remove('y'));
+  assert.equal(p1, p1.update('x', identity));
+  assert.equal(p1, p1.update('y', identity));
+})
+
+test("identical no change in deep updates", assert => {
+  var Line = Record({start: Point, end: Point}, 'Line')
+
+  var l1 = Line({start: {x: 5}, end: {x: 7, y: 2}})
+
+  assert.equal(l1, l1.set('start', l1.start))
+  assert.equal(l1, l1.set('end', l1.end))
+
+  assert.equal(l1, l1.merge({start: l1.start}))
+  assert.equal(l1, l1.merge({end: l1.end}))
+  assert.equal(l1, l1.merge({start: l1.start, end: l1.end}))
+  assert.equal(l1, l1.removeIn(['start', 'y']))
+  assert.equal(l1, l1.setIn(['start', 'x'], 5))
+  assert.equal(l1, l1.setIn(['start', 'x'], 5)
+                     .setIn(['end', 'x'], 7))
+  assert.equal(l1, l1.mergeIn(['start'], {x: 5}))
+  assert.equal(l1, l1.mergeIn(['start'], {x: 5, y: 0}))
+  assert.equal(l1, l1.mergeIn(['start'], {y: 0}))
+  assert.equal(l1, l1.mergeIn(['end'], {y: 2}))
+  assert.equal(l1, l1.mergeIn(['end'], {x: 7}))
+  assert.equal(l1, l1.mergeIn(['end'], {y: 2, x: 7}))
+
+  assert.equal(l1, l1.update('start', p => p.set('x', 5)))
+})

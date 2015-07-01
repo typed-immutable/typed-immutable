@@ -17,11 +17,15 @@ const $empty = Typed.empty
 
 
 const change = (list, f) => {
-  const result = list.__ownerID ? list : construct(list)
   const store = f(list[$store])
-  result[$store] = store
-  result.size = store.size
-  return result
+  if (store === list[$store]) {
+    return list
+  } else {
+    const result = list.__ownerID ? list : construct(list)
+    result[$store] = store
+    result.size = store.size
+    return result
+  }
 }
 
 const clear = target => target.clear()
@@ -47,6 +51,7 @@ class TypeInferedList extends Immutable.List {
   static from(list) {
     const result = construct(this.prototype)
     result[$store] = list[$store]
+    result.size = list.size
     return result
   }
   constructor(value) {
@@ -84,7 +89,9 @@ class TypeInferedList extends Immutable.List {
 
 
     const list = this[$init]()
-    Indexed(input).forEach((value, index) => {
+    const source = Indexed(input)
+    list.size = source.size
+    source.forEach((value, index) => {
       list.set(index, value)
     })
 
@@ -207,6 +214,7 @@ class TypeInferedList extends Immutable.List {
     result.__ownerID = ownerID
     result[$store] = this[$store] ? this[$store].__ensureOwner(ownerID) :
                      ImmutableList().__ensureOwner(ownerID)
+    result.size = result[$store].size
 
     return result
   }
@@ -233,6 +241,9 @@ class TypedList extends TypeInferedList {
       return this
     } else {
       const result = TypeInferedList.from(this).map(mapper, context)
+      if (this[$store] === result[$store]) {
+        return this
+      }
       if (result[$type] === this[$type]) {
         const list = construct(this)
         list[$store] = result[$store]
@@ -298,5 +309,3 @@ export const List = function(descriptor, label) {
 List.Type = TypedList
 List.prototype = TypedList.prototype
 const ListPrototype = TypedList.prototype
-
-

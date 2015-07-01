@@ -947,3 +947,30 @@ test('can be efficiently sliced', assert => {
   assert.equal(v2.last(), 1899)
   assert.equal(v2.butLast().size, 1799)
 })
+
+const identity = x => x
+test('identity preserved on no redundunt changes', assert => {
+  const ps = Points([{x: 1}, {y: 20}, {x: 3, y: 5}])
+
+
+  assert.equal(ps, ps.set(0, ps.first()))
+  assert.equal(ps, ps.set(1, ps.get(1)))
+  assert.equal(ps, ps.set(2, ps.get(2)))
+
+  assert.equal(ps.setIn([0, 'x'], 1), ps)
+  assert.equal(ps.setIn([0, 'y'], 0), ps)
+  assert.equal(ps.setIn([1, 'x'], 0), ps)
+  assert.equal(ps.setIn([1, 'y'], 20), ps)
+  assert.equal(ps.setIn([2, 'x'], 3), ps)
+  assert.equal(ps.setIn([2, 'y'], 5), ps)
+
+  assert.equal(ps.mergeIn([0], {x: 1}), ps)
+  assert.equal(ps.mergeIn([0], {y: 0}), ps)
+  assert.equal(ps.mergeIn([0], {x: 1, y: 0}), ps)
+  assert.equal(ps.mergeIn([1], {x: 0}), ps)
+  assert.equal(ps.mergeIn([1], {y: 20}), ps)
+  assert.equal(ps.mergeIn([1], {x: 0, y: 20}), ps)
+  assert.equal(ps.mergeIn([2], {x: 3}), ps)
+  assert.equal(ps.mergeIn([2], {y: 5}), ps)
+  assert.equal(ps.mergeIn([2], {x: 3, y: 5}), ps)
+})

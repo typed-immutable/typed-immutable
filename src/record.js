@@ -68,6 +68,10 @@ class TypedRecord extends Iterable.Keyed {
     const store = result[$store] ? result[$store].set(key, value) :
                   new Map([[key, value]])
 
+    if (result[$store] === store) {
+      return result;
+    }
+
     const record = result.__ownerID ? result : construct(result)
     record[$store] = store
 

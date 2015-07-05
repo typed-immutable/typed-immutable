@@ -17,6 +17,7 @@ const $empty = Typed.empty
 
 class EntryType extends Type {
   constructor(key, value, label) {
+    super()
     this.key = key
     this.value = value
     this.label = label
@@ -42,8 +43,7 @@ class EntryType extends Type {
 
 class InferredEntryType extends EntryType {
   constructor() {
-    this.key = null
-    this.value = null
+    super(key, value)
   }
   toStatic() {
     return new MapEntryType(this.key, this.value)
@@ -68,8 +68,12 @@ class InferredEntryType extends EntryType {
   }
 }
 
-class TypedMap extends Immutable.Map {
+const BaseImmutableMap = function() {}
+BaseImmutableMap.prototype = Immutable.Map.prototype
+
+class TypedMap extends BaseImmutableMap {
   constructor(value) {
+    super()
     return TypedMap.prototype[$read](value)
   }
   advance(store) {
@@ -201,7 +205,9 @@ class TypedMap extends Immutable.Map {
 TypedMap.prototype[Typed.DELETE] = TypedMap.prototype.remove
 
 class TypeInferredMap extends TypedMap {
-  constructor() {}
+  constructor() {
+    super()
+  }
   [Typed.init]() {
     const result = this.advance(ImmutableMap()).asMutable()
     result[$type] = new InferredEntryType()
@@ -278,5 +284,3 @@ export const Map = function(keyDescriptor, valueDescriptor, label) {
 Map.Type = TypedMap
 Map.prototype = TypedMap.prototype
 const MapPrototype = Map.prototype
-
-

@@ -47,7 +47,10 @@ class TypeInferer extends Type {
   }
 }
 
-class TypeInferedList extends Immutable.List {
+function BaseImmutableList() {}
+BaseImmutableList.prototype = ImmutableList.prototype
+
+class TypeInferedList extends BaseImmutableList {
   static from(list) {
     const result = construct(this.prototype)
     result[$store] = list[$store]
@@ -55,6 +58,7 @@ class TypeInferedList extends Immutable.List {
     return result
   }
   constructor(value) {
+    super();
     return TypeInferedList.prototype[$read](value)
   }
   [Typed.init]() {
@@ -228,8 +232,13 @@ class TypeInferedList extends Immutable.List {
 }
 TypeInferedList.prototype[Typed.DELETE] = TypeInferedList.prototype.remove;
 
-class TypedList extends TypeInferedList {
-  constructor() {}
+const BaseTypeInferedList = function() {}
+BaseTypeInferedList.prototype = TypeInferedList.prototype
+
+class TypedList extends BaseTypeInferedList {
+  constructor() {
+    super()
+  }
   [Typed.init]() {
     return construct(this).asMutable()
   }

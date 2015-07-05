@@ -30,6 +30,7 @@ const $typeSignature = Symbol("typed/type/signature")
 export const Typed = function(label, parse, defaultValue) {
   class ValueType extends Type {
     constructor(defaultValue) {
+      super()
       this[$default] = defaultValue
     }
   }
@@ -84,7 +85,7 @@ const ObjectPrototype = Object.prototype
 
 // Returns `true` if given `x` is a JS array.
 const isArray = Array.isArray ||
-  x => ObjectPrototype.toString.call(x) === '[object Array]'
+  (x => ObjectPrototype.toString.call(x) === '[object Array]')
 
 // Returns `true` if given `x` is a regular expression.
 const isRegExp = x =>
@@ -141,6 +142,7 @@ Typed.Boolean = Typed("Boolean", value =>
 
 class MaybeType extends Type {
   constructor(type) {
+    super()
     this[$type] = type
   }
   [Typed.typeName]() {
@@ -167,6 +169,7 @@ Maybe.Type = MaybeType
 
 class UnionType extends Type {
   constructor(variants) {
+    super()
     this[$type] = variants
   }
   [Typed.typeName]() {

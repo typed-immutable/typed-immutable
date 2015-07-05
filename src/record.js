@@ -26,8 +26,14 @@ const $empty = Typed.empty
 const $typeName = Typed.typeName
 const $typeSignature = Typed.typeSignature
 
-class TypedRecord extends Iterable.Keyed {
-  constructor() {}
+const IterableKeyedBase = function() {}
+IterableKeyedBase.prototype = Iterable.Keyed.prototype
+
+
+class TypedRecord extends IterableKeyedBase {
+  constructor() {
+    super()
+  }
   [Typed.init]() {
     return construct(this).asMutable()
   }

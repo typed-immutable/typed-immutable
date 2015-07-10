@@ -974,3 +974,14 @@ test('identity preserved on no redundunt changes', assert => {
   assert.equal(ps.mergeIn([2], {y: 5}), ps)
   assert.equal(ps.mergeIn([2], {x: 3, y: 5}), ps)
 })
+
+test('empty list optimization', assert => {
+  assert.equal(Points(), Points())
+  assert.equal(Points(void(0)), Points())
+  assert.equal(Points(null), Points())
+  assert.equal(Points([]), Points())
+  assert.notEqual(Points([Point({x: 1})]), Points())
+  assert.equal(Points([Point({x: 1})]).clear(), Points())
+  assert.equal(Points([Point({x: 1})]).clear(),
+               Points([Point({x: 1}), Point({y: 2})]).clear())
+})

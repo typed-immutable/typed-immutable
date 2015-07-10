@@ -443,6 +443,7 @@ test("can update sub-records", assert => {
     assert.ok(l5.password.isFocused === false)
 })
 
+
 test("can use instances as fields", assert => {
   const Field = Record({isFocused: false,
                         value: ""})
@@ -452,12 +453,18 @@ test("can use instances as fields", assert => {
 
   const l1 = Login()
 
-  assert.ok(l1.user instanceof Field)
-  assert.ok(l1.password instanceof Field)
-  assert.ok(l1.user.value === "")
-  assert.ok(l1.user.isFocused === true)
-  assert.ok(l1.password.value === "")
-  assert.ok(l1.password.isFocused === false)
+  assert.ok(l1.user instanceof Field,
+            'l1.user is Field instance')
+  assert.ok(l1.password instanceof Field,
+            'l1.password is Field instance')
+  assert.ok(l1.user.value === "",
+            'l1.user.value is ""')
+  assert.ok(l1.user.isFocused === true,
+            'l1.user.isFocused is true')
+  assert.ok(l1.password.value === "",
+            'l1.password.value is ""')
+  assert.ok(l1.password.isFocused === false,
+            'l1.password.isFocused is false')
 
   const l2 = Login({user: {isFocused: false, value: "gozala"},
                     password: {isFocused: true}})

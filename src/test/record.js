@@ -78,3 +78,18 @@ test("identical no change in deep updates", assert => {
 
   assert.equal(l1, l1.update('start', p => p.set('x', 5)))
 })
+
+
+test('empty record optimization', assert => {
+  const Point = Record({x: 0, y: 0}, 'Point')
+
+  assert.equal(Point(), Point())
+  assert.notEqual(Point({x: 1}), Point())
+  assert.equal(Point({x: 1}).clear(), Point())
+  assert.equal(Point({x: 1}).clear(), Point({y: 2}).clear())
+  assert.equal(Point({}), Point())
+  assert.notEqual(Point({z: 3}), Point())
+  assert.ok(Point({z: 3}).equals(Point()))
+  assert.notEqual(Point({x:0}), Point())
+  assert.ok(Point({x: 0}).equals(Point()))
+});

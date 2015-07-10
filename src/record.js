@@ -41,19 +41,27 @@ class TypedRecord extends IterableKeyedBase {
     return result.asImmutable()
   }
 
-  [Typed.read](structure={}) {
+  [Typed.read](structure) {
     const Type = this.constructor
 
-    if (structure instanceof Type && structure.constructor === Type) {
+    if (structure instanceof Type &&
+        structure &&
+        structure.constructor === Type) {
       return structure
     }
 
-    if (!structure || typeof(structure) !== "object") {
+    if (structure === null || (structure && typeof(structure) !== "object")) {
       return TypeError(`Invalid data structure "${structure}" was passed to ${this[$typeName]()}`)
     }
 
     const seq = Seq(structure)
     const type = this[$type]
+    const isEmpty = seq.size === 0
+
+
+    if (isEmpty && this[$empty]) {
+      return this[$empty]
+    }
 
     let record
     for (let key in type) {
@@ -68,7 +76,13 @@ class TypedRecord extends IterableKeyedBase {
       record = this[$step](record || this[$init](), [key, result])
     }
 
-    return this[$result](record)
+    record = this[$result](record)
+
+   if (isEmpty) {
+      this[$empty] = record
+    }
+
+    return record
   }
   [Typed.step](result, [key, value]) {
     const store = result[$store] ? result[$store].set(key, value) :
@@ -118,9 +132,8 @@ class TypedRecord extends IterableKeyedBase {
       return this
     }
 
-    const RecordType = this.constructor
     return this[$empty] ||
-           (RecordType[$empty] = new RecordType())
+           (this[$empty] = new this.constructor())
   }
 
   remove(key) {

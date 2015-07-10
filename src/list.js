@@ -77,29 +77,41 @@ class TypeInferedList extends BaseImmutableList {
     const Type = this.constructor
 
     if (input === null || input === void(0)) {
-      if (!Type[$empty]) {
+      if (!this[$empty]) {
         const result = construct(this)
         result[$store] = ImmutableList()
         result.size = 0
-        Type[$empty] = result
+        this[$empty] = result
       }
 
-      return Type[$empty]
+      return this[$empty]
     }
 
-    if (input instanceof Type && input.constructor === Type) {
+    if (input instanceof Type && input && input.constructor === Type) {
       return input
     }
 
-
-    const list = this[$init]()
     const source = Indexed(input)
+    const isEmpty = source.size === 0
+
+    if (isEmpty && this[$empty]) {
+      return this[$empty]
+    }
+
+
+    let list = this[$init]()
     list.size = source.size
     source.forEach((value, index) => {
       list.set(index, value)
     })
 
-    return this[$result](list)
+    list = this[$result](list)
+
+    if (isEmpty) {
+      this[$empty] = list
+    }
+
+    return list
   }
   [Typed.step](result, [key, value]) {
     return change(result, (store=ImmutableList()) => store.set(key, value))

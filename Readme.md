@@ -258,7 +258,7 @@ Color({red: 200, opacity: "transparent"}) // => TypeError: Invalid value for "op
 A union type is a way to put together many different types. This lets you create list or records fields that can take  either one of the several types:
 
 ```js
-var {Maybe} = require("typed-immutable")
+var {Union} = require("typed-immutable")
 var Form = Record({
   user: Union(Username, Email),
   password: String('')

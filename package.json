@@ -1,6 +1,6 @@
 {
   "name": "typed-immutable",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Immutable structurally typed data",
   "author": "Irakli Gozalishvili <rfobic@gmail.com> (http://jeditoolkit.com)",
   "homepage": "https://github.com/gozala/typed-immutable",

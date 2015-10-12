@@ -195,11 +195,11 @@ class TypedMap extends BaseImmutableMap {
     return result
   }
   __iterator(type, reverse) {
-    this[$store].__iterator(type, reverse)
+    return this[$store].__iterator(type, reverse)
   }
 
   __iterate(f, reverse) {
-    this[$store].__iterate(f, reverse)
+    return this[$store].__iterate(f, reverse)
   }
 }
 TypedMap.prototype[Typed.DELETE] = TypedMap.prototype.remove

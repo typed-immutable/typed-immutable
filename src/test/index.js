@@ -1,7 +1,7 @@
 import test from "./test"
 import * as Immutable from "immutable"
 import {Record} from "../record"
-import {Typed, typeOf, Union, Range, Maybe} from "../typed"
+import {Typed, typeOf, Union, Maybe} from "../typed"
 
 test("define a constructor", assert => {
   const MyType = Record({a: Number(1),
@@ -516,6 +516,48 @@ test("Maybe type", assert => {
                `InputModel({ "value": "hello" })`)
 })
 
+test("Enum type", assert => {
+
+  assert.throws(_ => Typed.Enum('Male')
+    ,/is not an array/)
+
+  const PersonWithDefaultSex = Record({
+    sex: Typed.Enum(['Male','Female'], 'Male')
+  }, 'PersonWithDefaultSex')
+  const personWithSex = new PersonWithDefaultSex()
+
+
+  assert.equal(personWithSex + "",
+    `PersonWithDefaultSex({ "sex": "Male" })`)
+
+  assert.equal(personWithSex.set('sex', 'Female') + "",
+    `PersonWithDefaultSex({ "sex": "Female" })`)
+
+  assert.equal(PersonWithDefaultSex({sex: "Female"}) + "",
+    `PersonWithDefaultSex({ "sex": "Female" })`)
+
+  assert.throws(_ => PersonWithDefaultSex({sex: 'M'}),
+    /should be in \[Male, Female\]/)
+
+
+  const Person = Record({
+    sex: Typed.Enum(['Male','Female'])
+  }, 'Person')
+  const person = new Person()
+
+  assert.equal(person + "",
+    `Person({ "sex": undefined })`)
+  //
+  assert.equal(person.set('sex', 'Male') + "",
+    `Person({ "sex": "Male" })`)
+  //
+  assert.equal(Person({sex: 'Female'}) + "",
+    `Person({ "sex": "Female" })`)
+  //
+  assert.throws(_ => Person({sex: 'M'}),
+    /should be in \[Male, Female\]/)
+
+})
 
 test("Range type", assert => {
   const Color = Record({

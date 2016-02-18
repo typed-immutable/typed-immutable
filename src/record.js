@@ -236,7 +236,7 @@ export const Record = function(descriptor, label) {
 
       return RecordType
     } else {
-      throw TypeError(`Typed.Record descriptor must define at least on field`)
+      throw TypeError(`Typed.Record descriptor must define at least one field`)
     }
   } else {
     throw TypeError(`Typed.Record must be passed a descriptor of fields`)

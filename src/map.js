@@ -273,6 +273,18 @@ export const Map = function(keyDescriptor, valueDescriptor, label) {
 
     return this
   }
+  
+  MapType.of = (...keyValues) => {
+    return MapType().withMutations(map => {
+      for (var i = 0; i < keyValues.length; i += 2) {
+        if (i + 1 >= keyValues.length) {
+          throw new Error('Missing value for key: ' + keyValues[i]);
+        }
+        map.set(keyValues[i], keyValues[i + 1]);
+      }
+    });
+  }
+
   MapType.prototype = Object.create(MapPrototype, {
     constructor: {value: MapType},
     [$type]: {value: type},

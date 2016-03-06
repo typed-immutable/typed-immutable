@@ -203,6 +203,8 @@ test('is persistent to updateIn', assert => {
   assert.throws(() => m2.updateIn(['level1', 'a'], 5))
   assert.throws(() => m2.updateIn(['level1', 5], 'a'))
   assert.throws(() => m2.updateIn([1, 'a'], 'a'))
+  assert.deepEquals(m1.toJS(), {a: 'a', b: 'b'})
+  assert.deepEquals(m2.toJS(), {level1: {a: 'a', b: 'b'}})
   assert.deepEquals(m3.toJS(), {level1: {a: 'aa', b: 'b'}})
   assert.deepEquals(m4.toJS(), {level1: {a: 'aaaa', b: 'b'}})
 })

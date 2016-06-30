@@ -140,6 +140,15 @@ Typed.Boolean = Typed("Boolean", value =>
   value === false ? false :
   TypeError(`"${value}" is not a boolean`))
 
+Typed.Date = Typed("Date", value => {
+  var d = new Date(value)
+  if (isNaN(d.valueOf())) {
+    return new TypeError(`"${value}" is not a valid date.`)
+  }
+  return d
+})
+
+
 class MaybeType extends Type {
   constructor(type) {
     super()

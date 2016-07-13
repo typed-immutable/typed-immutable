@@ -1,8 +1,6 @@
 # Typed-immutable [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Gitter][gitter-image]][gitter-url]
 =========
 
-## Status: [New maintainer needed](https://github.com/Gozala/typed-immutable/issues/21)
-
 Library provides is built upon [immutable.js][] to leverage it’s immutable [persistent][] data and provide structural typing on top of that. Library is not aiming to provide type safety of typed language (some static type checker like [flow][] would be tool for that) although it allows user to define structured types and guarantees that values produced and later transformed will conform to pre-defined structure. Handy use case for such tool would be an application state modelling (in [MVC][] sense), specially if state is centralised but compartmentalized for us by independent components.
 
 

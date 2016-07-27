@@ -1,4 +1,4 @@
-# Typed-immutable [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Gitter][gitter-image]][gitter-url]
+# Typed-immutable [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url]
 =========
 
 Library provides is built upon [immutable.js][] to leverage it’s immutable [persistent][] data and provide structural typing on top of that. Library is not aiming to provide type safety of typed language (some static type checker like [flow][] would be tool for that) although it allows user to define structured types and guarantees that values produced and later transformed will conform to pre-defined structure. Handy use case for such tool would be an application state modelling (in [MVC][] sense), specially if state is centralised but compartmentalized for us by independent components.
@@ -337,12 +337,8 @@ v3.toString() // => Typed.Record({value: Any})({ "value": Typed.Record({value: A
 [npm-url]: https://npmjs.org/package/typed-immutable
 [npm-image]: https://img.shields.io/npm/v/typed-immutable.svg?style=flat
 
-[travis-url]: https://travis-ci.org/Gozala/typed-immutable
-[travis-image]: https://img.shields.io/travis/Gozala/typed-immutable.svg?style=flat
-
-[gitter-url]: https://gitter.im/Gozala/typed-immutable?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
-[gitter-image]: https://badges.gitter.im/Join%20Chat.svg
-
+[travis-url]: https://travis-ci.org/typed-immutable/typed-immutable
+[travis-image]: https://img.shields.io/travis/typed-immutable/typed-immutable.svg?style=flat
 
 
 [immutable.js]:http://facebook.github.io/immutable-js/

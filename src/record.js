@@ -44,9 +44,7 @@ class TypedRecord extends IterableKeyedBase {
   [Typed.read](structure) {
     const Type = this.constructor
 
-    if (structure instanceof Type &&
-        structure &&
-        structure.constructor === Type) {
+    if (structure && structure instanceof Type) {
       return structure
     }
 

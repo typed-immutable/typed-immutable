@@ -303,7 +303,7 @@ export const List = function(descriptor, label) {
   const type = typeOf(descriptor)
 
   if (type === Any) {
-    throw TypeError("Typed.List was passed an invalid type descriptor: ${descriptor}")
+    throw TypeError(`Typed.List was passed an invalid type descriptor: ${descriptor}`)
   }
 
   const ListType = function(value) {

@@ -37,7 +37,7 @@ Point({x: "1", y: "2"}) // => TypeError: Invalid value for "x" field:
 ```
 
 
-Record types definitions may also be provided a default values for feilds for a convinence of use:
+Record types definitions may also be provided a default values for feilds for a convenience of use:
 
 ```js
 var Point = Record({x: Number(0), y: Number(0)})
@@ -182,7 +182,7 @@ Numbers([1, 2, 3, "4", "5"]) // => TypeError: Invalid value: "4" is not a number
 Numbers([1, 2, 3]).push(null) // => TypeError: Invalid value: "null" is not a number
 ```
 
-Typed lists can also be named for convinience:
+Typed lists can also be named for convenience:
 
 ```js
 var Strings = List(String, "Strings")
@@ -225,6 +225,45 @@ xs.toString() // => Typed.List(Number)([ 1, 2 ])
 
 As you can see from example above original `ps` list was of `Point` records while mapped `xs` list is of numbers and that is refleced in the type of the list. Although given that JS is untyped language theer is no guarantee that mapping function will return values of the same type which makes things little more complex, result of such mapping will be list of union type of all types that mapping funciton produced (see types section for union types).
 
+### Map
+
+You can define a typed map by providing `Map` the type for the key and the type for the value:
+
+```js
+var {Map, Record} = require("typed-immutable")
+var Product = Record({name: String}, "Product")
+
+var Products = Map(Number, Product)
+
+Products().toString() // ‘Typed.Map(Number, Product)({})’
+
+Products([[1, {name: "Mapper 1000"}]]).toString() 
+//Typed.Map(Number, Product)({ 1: Product({ "name": "Mapper 1000" }) })
+```
+
+Typed maps may contain only entries with key and value that match the specified type:
+
+```js
+
+Products([[1, "Mapper 1000"]]) 
+// => TypeError: Invalid value: Invalid data structure "Mapper 1000" was passed to Product
+
+Products().set("P1", {name: "Mapper 1000"}) 
+// TypeError: Invalid key: "P1" is not a number
+
+// All keys in an object are strings, so this fails too:
+Products({1: {name: "Mapper 1000"}}) // TypeError: Invalid key: "1" is not a number 
+```
+
+Note the last example - all keys in an object are strings so if you instantiate a map from an object the type of your key must be a string (or something that handles strings).
+
+As with other types Typed maps can also be named for convenience:
+
+```js
+var Products = Map(Number, Product, "Products")
+Products([[1, {name: "Mapper 1000"}]]).toString() 
+// Products({ 1: Product({ "name": "Mapper 1000" }) })
+```
 
 ### Types
 

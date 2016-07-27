@@ -17,11 +17,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/gozala/typed-immutable.git",
-    "web": "https://github.com/Gozala/typed-immutable"
+    "url": "git://github.com/typed-immutable/typed-immutable",
+    "web": "https://github.com/typed-immutable/typed-immutable"
   },
   "bugs": {
-    "url": "https://github.com/gozala/typed-immutable/issues"
+    "url": "https://github.com/typed-immutable/typed-immutable/issues"
   },
   "license": "MIT",
   "main": "./lib/index.js",

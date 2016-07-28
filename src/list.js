@@ -289,6 +289,25 @@ class TypedList extends BaseTypeInferedList {
       }
     }
   }
+  flatMap(mapper, context) {
+    if (this.size === 0) {
+      return this
+    } else {
+      const result = TypeInferedList.from(this).flatMap(mapper, context)
+      if (this[$store] === result[$store]) {
+        return this
+      }
+      if (result[$type] === this[$type]) {
+        const list = construct(this)
+        list[$store] = result[$store]
+        list.size = result.size
+        return list
+      } else {
+        return result
+      }
+    }
+  }
+
 }
 
 export const List = function(descriptor, label) {

@@ -996,3 +996,22 @@ test('empty list optimization', assert => {
   assert.equal(Points([Point({x: 1})]).clear(),
                Points([Point({x: 1}), Point({y: 2})]).clear())
 })
+
+test('flatMap', assert => {
+  var numbers = NumberList.of(97, 98, 99);
+  var letters = numbers.flatMap(v => Immutable.fromJS([
+    String.fromCharCode(v),
+    String.fromCharCode(v).toUpperCase(),
+  ]))
+
+  assert.deepEqual(letters.toArray(), ['a','A','b','B','c','C'])
+
+  var letters = numbers.flatMap(v => [
+    String.fromCharCode(v),
+    String.fromCharCode(v).toUpperCase(),
+  ])
+
+  assert.deepEqual(letters.toArray(), ['a','A','b','B','c','C'])
+
+})
+

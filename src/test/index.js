@@ -545,18 +545,21 @@ test("Enum type", assert => {
   }, 'Person')
   const person = new Person()
 
+  // Default value is first value
   assert.equal(person + "",
-    `Person({ "sex": undefined })`)
-  //
+    `Person({ "sex": "Male" })`)
+  
   assert.equal(person.set('sex', 'Male') + "",
     `Person({ "sex": "Male" })`)
-  //
+  
   assert.equal(Person({sex: 'Female'}) + "",
     `Person({ "sex": "Female" })`)
-  //
+
+  assert.throws(_ => Typed.Enum([]),
+    /At least one value needs to be there for an Enum/)
+
   assert.throws(_ => Person({sex: 'M'}),
     /should be in \[Male, Female\]/)
-
 })
 
 test("Range type", assert => {

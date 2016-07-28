@@ -311,6 +311,9 @@ Typed.Enum = (values, defaultValue) =>{
   }
 
   const map = {}
+  if (values.length === 0) {
+    throw TypeError(`At least one value needs to be there for an Enum`);
+  }
   values.forEach((val) => {
     map[val] = val
   });
@@ -322,5 +325,5 @@ Typed.Enum = (values, defaultValue) =>{
       return TypeError(`"${value}" should be in [${validValues}]`)
     }
     return value
-  }, defaultValue)
+  }, defaultValue || values[0])
 }

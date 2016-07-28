@@ -368,6 +368,8 @@ v2.toString() // => Typed.Record({value: Any})({ "value": "hello" })
 v3.toString() // => Typed.Record({value: Any})({ "value": Typed.Record({value: Any})({ "value": "hello" }) })
 ```
 
+## Contribution
+- Run `npm start` before `npm test` as the tests are ran on built code
 
 ## License
 

@@ -545,6 +545,17 @@ test('push inserts at highest index', assert => {
   assert.deepEqual(v1.toArray(), [1, 2, 3, 4, 5, 6])
 })
 
+test('insert inserts where told', assert => {
+  const v0 = NumberList.of(1, 2, 3, 4, 5)
+  const v1 = v0.insert(2, 50)
+
+  assert.ok(v0 instanceof NumberList)
+  assert.ok(v1 instanceof NumberList)
+
+  assert.deepEqual(v0.toArray(), [1, 2, 3, 4, 5])
+  assert.deepEqual(v1.toArray(), [1, 2, 50, 3, 4, 5])
+})
+
 test('pop removes the highest index, decrementing size', assert => {
   const v0 = NumberList.of(1, 2, 3)
   const v1 = v0.pop()

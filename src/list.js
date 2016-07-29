@@ -130,7 +130,7 @@ class TypeInferedList extends BaseImmutableList {
   }
 
   get(index, notSetValue) {
-    return this[$store] ? this[$store].get(index, notSetValue) :
+    return this[$store] ? this[$store].get(parseInt(index), notSetValue) :
            notSetValue
   }
 
@@ -142,13 +142,27 @@ class TypeInferedList extends BaseImmutableList {
     return this[$empty] || this[$read]()
   }
 
+  insert(index, value) {
+    if (index > this.size) {
+      throw TypeError(`Index "${index}" is out of bounds.`)
+    }
+
+    const result = this[$type][$read](value)
+
+    if (result instanceof TypeError) {
+      throw TypeError(`Invalid value: ${result.message}`)
+    }
+
+    return change(this, store => store.insert(index, value))
+  }
+
   remove(index) {
     return change(this, store => store && store.remove(index))
   }
 
   set(index, value) {
     if (index > this.size) {
-      throw TypeError(`Index "${index}" is out of bound`)
+      throw TypeError(`Index "${index}" is out of bounds.`)
     }
 
     const result = this[$type][$read](value)

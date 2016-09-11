@@ -5,6 +5,7 @@ import {List} from "../list"
 import {Typed, Union, Maybe} from "../typed"
 
 const NumberList = List(Number)
+const NumberListOfNumbers = List(NumberList)
 const StringList = List(String)
 const Point = Record({x: Number(0),
                       y: Number(0)},
@@ -1015,3 +1016,40 @@ test('flatMap', assert => {
 
 })
 
+test('merge', assert => {
+  const numbers = NumberList.of(1, 2, 3)
+  assert.deepEqual(numbers.merge(NumberList.of(4, 5, 6, 7)).toArray(), [4, 5, 6, 7])
+  assert.deepEqual(numbers.merge(NumberList.of(4)).toArray(), [4, 2, 3])
+  assert.throws(() => numbers.merge([1,2], [4, 5, 6, '7']), /is not a number/)
+})
+
+test('mergeWith', assert => {
+  const numbers = NumberList.of(1, 2, 3)
+  const useExisting = (prev, next) => prev != null ? prev : next;
+  assert.deepEqual(numbers.mergeWith(useExisting, NumberList.of(4, 5, 6, 7)).toArray(), [1, 2, 3, 7])
+  assert.deepEqual(numbers.mergeWith(useExisting, NumberList.of(4)).toArray(), [1, 2, 3])
+  assert.throws(() => numbers.merge(useExisting, [4, 5, 6, '7']), /is not a number/)
+})
+
+test('mergeDeep', assert => {
+  var numbers = NumberListOfNumbers.of([1, 2, 3], [4, 5, 6])
+  assert.deepEqual(
+    numbers.mergeDeep([[10], [20, 21], [30]]).toJS(),
+    [[10, 2, 3], [20, 21, 6], [30]])
+  assert.deepEqual(
+    numbers.mergeDeep([[10, 11, 12, 13], [20, 21]]).toJS(),
+    [[10, 11, 12, 13], [20, 21, 6]])
+  assert.throws(() => numbers.mergeDeep([[10], ['11']], /is not a number/)
+})
+
+test('mergeDeepWith', assert => {
+  var numbers = NumberListOfNumbers.of([1, 2, 3], [4, 5, 6])
+  const add = (prev, next) => (prev || 0) + next;
+  assert.deepEqual(
+    numbers.mergeDeepWith(add, [[10], [20, 21]]).toJS(),
+    [[11, 2, 3], [24, 26, 6]])
+  assert.deepEqual(
+    numbers.mergeDeepWith(add, [[10, 11, 12, 13], [20, 21]]).toJS(),
+    [[11, 13, 15, 13], [24, 26, 6]])
+  assert.throws(() => numbers.mergeDeep(add, [[10], ['11']], /is not a number/)
+})

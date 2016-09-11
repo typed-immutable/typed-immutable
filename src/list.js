@@ -28,6 +28,35 @@ const change = (list, f) => {
   }
 }
 
+const maxSizeFromIterables = (iterables) => {
+    let maxSize = 0;
+    for (let i = 0; i < iterables.length; i++) {
+      const iter = Indexed(iterables[i]);
+      if (iter.size > maxSize) {
+        maxSize = iter.size;
+      }
+    }
+    return maxSize;
+}
+
+const convertValuesToType = (type, values) => {
+  const items = []
+  const iter = Indexed(values);
+  let index = 0
+  while (index < iter.size) {
+    const value = iter.get(index)
+    const result = type[$read](value)
+
+    if (result instanceof TypeError) {
+      throw TypeError(`Invalid value: ${result.message}`)
+    }
+
+    items.push(result)
+    index = index + 1
+  }
+  return items;
+}
+
 const clear = target => target.clear()
 const pop = target => target.pop()
 const shift = target => target.shift()
@@ -234,6 +263,39 @@ class TypeInferedList extends BaseImmutableList {
 
   wasAltered() {
     return this[$store].wasAltered()
+  }
+
+  merge(...iterables) {
+    const maxSize = maxSizeFromIterables(iterables);
+    const typedIterables = iterables.map(convertValuesToType.bind(null, this[$type]));
+    if (maxSize > this.size) {
+      return change(this, store => store.setSize(maxSize)).merge(...typedIterables);
+    }
+    return change(this, store => store.merge(...typedIterables));
+  }
+
+  mergeWith(merger, ...iterables) {
+    const maxSize = maxSizeFromIterables(iterables);
+    if (maxSize > this.size) {
+      return change(this, store => store.setSize(maxSize).mergeWith(merger, ...iterables));
+    }
+    return change(this, store => store.mergeWith(merger, ...iterables));
+  }
+
+  mergeDeep(...iterables) {
+    const maxSize = maxSizeFromIterables(iterables);
+    if (maxSize > this.size) {
+      return change(this, store => store.setSize(maxSize).mergeDeep(...iterables));
+    }
+    return change(this, store => store.mergeDeep(...iterables));
+  }
+
+  mergeDeepWith(merger, ...iterables) {
+    const maxSize = maxSizeFromIterables(iterables);
+    if (maxSize > this.size) {
+      return change(this, store => store.setSize(maxSize).mergeDeepWith(merger, ...iterables));
+    }
+    return change(this, store => store.mergeDeepWith(merger, ...iterables));
   }
 
   __ensureOwner(ownerID) {

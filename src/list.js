@@ -276,26 +276,29 @@ class TypeInferedList extends BaseImmutableList {
 
   mergeWith(merger, ...iterables) {
     const maxSize = maxSizeFromIterables(iterables);
+    const typedIterables = iterables.map(convertValuesToType.bind(null, this[$type]));
     if (maxSize > this.size) {
-      return change(this, store => store.setSize(maxSize).mergeWith(merger, ...iterables));
+      return change(this, store => store.setSize(maxSize).mergeWith(merger, ...typedIterables));
     }
-    return change(this, store => store.mergeWith(merger, ...iterables));
+    return change(this, store => store.mergeWith(merger, ...typedIterables));
   }
 
   mergeDeep(...iterables) {
     const maxSize = maxSizeFromIterables(iterables);
+    const typedIterables = iterables.map(convertValuesToType.bind(null, this[$type]));
     if (maxSize > this.size) {
-      return change(this, store => store.setSize(maxSize).mergeDeep(...iterables));
+      return change(this, store => store.setSize(maxSize).mergeDeep(...typedIterables));
     }
-    return change(this, store => store.mergeDeep(...iterables));
+    return change(this, store => store.mergeDeep(...typedIterables));
   }
 
   mergeDeepWith(merger, ...iterables) {
     const maxSize = maxSizeFromIterables(iterables);
+    const typedIterables = iterables.map(convertValuesToType.bind(null, this[$type]));
     if (maxSize > this.size) {
-      return change(this, store => store.setSize(maxSize).mergeDeepWith(merger, ...iterables));
+      return change(this, store => store.setSize(maxSize).mergeDeepWith(merger, ...typedIterables));
     }
-    return change(this, store => store.mergeDeepWith(merger, ...iterables));
+    return change(this, store => store.mergeDeepWith(merger, ...typedIterables));
   }
 
   __ensureOwner(ownerID) {

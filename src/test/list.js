@@ -1028,7 +1028,7 @@ test('mergeWith', assert => {
   const useExisting = (prev, next) => prev != null ? prev : next;
   assert.deepEqual(numbers.mergeWith(useExisting, NumberList.of(4, 5, 6, 7)).toArray(), [1, 2, 3, 7])
   assert.deepEqual(numbers.mergeWith(useExisting, NumberList.of(4)).toArray(), [1, 2, 3])
-  assert.throws(() => numbers.merge(useExisting, [4, 5, 6, '7']), /is not a number/)
+  assert.throws(() => numbers.mergeWith(useExisting, [4, 5, 6, '7']), /is not a number/)
 })
 
 test('mergeDeep', assert => {
@@ -1039,7 +1039,7 @@ test('mergeDeep', assert => {
   assert.deepEqual(
     numbers.mergeDeep([[10, 11, 12, 13], [20, 21]]).toJS(),
     [[10, 11, 12, 13], [20, 21, 6]])
-  assert.throws(() => numbers.mergeDeep([[10], ['11']], /is not a number/)
+  assert.throws(() => numbers.mergeDeep([[10], ['11']]), /is not a number/)
 })
 
 test('mergeDeepWith', assert => {
@@ -1051,5 +1051,5 @@ test('mergeDeepWith', assert => {
   assert.deepEqual(
     numbers.mergeDeepWith(add, [[10, 11, 12, 13], [20, 21]]).toJS(),
     [[11, 13, 15, 13], [24, 26, 6]])
-  assert.throws(() => numbers.mergeDeep(add, [[10], ['11']], /is not a number/)
+  assert.throws(() => numbers.mergeDeepWith(add, [[10], ['11']]), /is not a number/)
 })

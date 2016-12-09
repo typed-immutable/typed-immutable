@@ -1,3 +1,19 @@
+### Release 0.1.0
+
+The `typed-immutable` maintainers are pleased to release a feature release
+for `typed-immutable`. It includes the following changes:
+
+  * Added support for the use of Immutable objects or classes in records.
+    [@lukesneeringer, #40]
+
+
+### Release 0.0.9
+
+The `typed-immutable` maintainers are pleased to release a minor upgrade
+and bugfix release for `typed-immutable`. It includes the following changes:
+
+  * Added support for `Map.merge` [@davecoates, #36]
+
 ### Release 0.0.8
 
 The `typed-immutable` maintainers are pleased to release a minor upgrade

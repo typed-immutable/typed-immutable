@@ -110,6 +110,15 @@ export const typeOf = (x, type=typeof(x)) =>
   x === Array ? Typed.Array.prototype :
   x === Symbol ? Typed.Symbol.prototype :
   x === Date ? Typed.Date.prototype :
+
+  // support Immutable objects
+  typeof x.toJS === 'function' ? new Typed.ImmutableClass(x.constructor)(x) :
+
+  // support Immutable classes -- all Immutable classes have `isX` static
+  // methods, e.g. List.isList, Map.isMap, Set.isSet; using this to
+  // approximate that
+  typeof x[`is${x.name}`] === 'function' ? Typed.ImmutableClass(x).prototype :
+
   Any;
 
 export const Any = Typed("Any", value => value)()
@@ -146,6 +155,19 @@ Typed.Date = Typed("Date", value => {
     return new TypeError(`"${value}" is not a valid date.`)
   }
   return d
+})
+
+Typed.ImmutableClass = cls => Typed(`Immutable.${cls.name}`, value => {
+  if (value instanceof cls) {
+    return value
+  }
+  else if (typeof value === 'undefined' || value === null) {
+    return new TypeError(`Expected ${cls.name}; got nothing.`)
+  }
+  else {
+    try { return new cls(value); }
+    catch (ex) { return ex; }
+  }
 })
 
 

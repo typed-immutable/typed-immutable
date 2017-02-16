@@ -1,4 +1,4 @@
-import {Typed, typeOf, construct} from "./typed"
+import {Typed, typeOf, construct, Any} from "./typed"
 import {Seq, Iterable, Map} from 'immutable'
 
 const {Keyed} = Iterable
@@ -67,7 +67,7 @@ class TypedRecord extends IterableKeyedBase {
       const value = seq.has(key) ? seq.get(key) : this.get(key)
       const result = fieldType[$read](value)
 
-      if (result instanceof TypeError) {
+      if (fieldType !== Any && result instanceof TypeError) {
         return TypeError(`Invalid value for "${key}" field:\n ${result.message}`)
       }
 
@@ -147,7 +147,7 @@ class TypedRecord extends IterableKeyedBase {
 
     const result = fieldType[$read](value)
 
-    if (result instanceof TypeError) {
+    if (fieldType !== Any && result instanceof TypeError) {
       throw TypeError(`Invalid value for ${key} field: ${result.message}`)
     }
 

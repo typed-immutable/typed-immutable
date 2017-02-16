@@ -1,12 +1,18 @@
 import test from "./test"
 import * as Immutable from "immutable"
 import {Record} from "../record"
-import {Typed, typeOf, Union, Maybe} from "../typed"
+import {Typed, typeOf, Any} from "../typed"
 
 const Point = Record({
   x: Number(0),
   y: Number(0)
 }, "Point")
+
+const PointAndAny = Record({
+  x: Number(0),
+  y: Number(0),
+  any: Any
+}, "PointAndAny")
 
 test("reading record short-cirquits", assert => {
   const v = Point()
@@ -40,6 +46,39 @@ test("reading records", assert => {
   assert.deepEqual(v4.toJSON(), {x:1,y:2})
 })
 
+test("reading records with TypeError in Any field", assert => {
+  const reader = typeOf(PointAndAny)
+
+  const aTypeError = new TypeError('error message')
+
+  const v1 = reader[Typed.read]()
+  const v2 = reader[Typed.read]({x:10})
+  const v3 = reader[Typed.read]({y:10})
+  const v4 = reader[Typed.read]({x:1, y:2})
+  const v5 = reader[Typed.read]({x:1, y:2, any: 'any'})
+  const v6 = reader[Typed.read]({x:1, y:2, any: aTypeError})
+
+  assert.ok(v1 instanceof Record)
+  assert.ok(v2 instanceof Record)
+  assert.ok(v3 instanceof Record)
+  assert.ok(v4 instanceof Record)
+  assert.ok(v5 instanceof Record)
+  assert.ok(v6 instanceof Record)
+
+  assert.ok(v1 instanceof PointAndAny)
+  assert.ok(v2 instanceof PointAndAny)
+  assert.ok(v3 instanceof PointAndAny)
+  assert.ok(v4 instanceof PointAndAny)
+  assert.ok(v5 instanceof PointAndAny)
+  assert.ok(v6 instanceof PointAndAny)
+
+  assert.deepEqual(v1.toJSON(), {x:0,y:0,any:undefined})
+  assert.deepEqual(v2.toJSON(), {x:10,y:0,any:undefined})
+  assert.deepEqual(v3.toJSON(), {x:0,y:10,any:undefined})
+  assert.deepEqual(v4.toJSON(), {x:1,y:2,any:undefined})
+  assert.deepEqual(v5.toJSON(), {x:1,y:2,any:'any'})
+  assert.deepEqual(v6.toJSON(), {x:1,y:2,any:aTypeError})
+})
 
 const identity = x => x
 test("identical on no change", assert => {

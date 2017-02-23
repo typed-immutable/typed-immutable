@@ -1,3 +1,13 @@
+### Release 0.1.1
+
+This patch release is dominated by TypeErrors, but it is no error.
+
+  * Allow TypeError to be stored as value in record with "Any" field type.
+    [@jharris4, #42]
+  * Allow Lists, Maps, and Records to coexist in a Union
+    [@brightcove, #43]
+
+
 ### Release 0.1.0
 
 The `typed-immutable` maintainers are pleased to release a feature release

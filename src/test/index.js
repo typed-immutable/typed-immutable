@@ -1,5 +1,7 @@
 import test from "./test"
 import * as Immutable from "immutable"
+import {List} from "../list"
+import {Map} from "../map"
 import {Record} from "../record"
 import {Typed, typeOf, Union, Range, Maybe} from "../typed"
 
@@ -566,4 +568,25 @@ test("Union of similar records", assert => {
   assert.equal(Action({action: add}).action, add, "recognizes Add")
   assert.equal(Action({action: remove}).action, remove, "recognizes Remove")
   assert.ok(Action({action: ambigius}).action instanceof Add, "matches Add")
+})
+
+test("Union of lists, maps, and records", assert => {
+  const MyList = List(Number(0))
+  const MyMap = Map(String, String)
+  const MyRecord = Record({id: Number(0)})
+  const Action = Record({action: Union(MyList, MyMap, MyRecord)})
+
+  const myList = MyList()
+  const myMap = MyMap()
+  const myRecord = MyRecord()
+  const ambiguousList = [5]
+  const ambiguousMap = {id: 'foo'}
+  const ambiguousRecord = {id: 1}
+
+  assert.equal(Action({action: myList}).action, myList, "recognizes MyList")
+  assert.equal(Action({action: myMap}).action, myMap, "recognizes MyMap")
+  assert.equal(Action({action: myRecord}).action, myRecord, "recognizes MyRecord")
+  assert.ok(Action({action: ambiguousList}).action instanceof MyList, "matches MyList")
+  assert.ok(Action({action: ambiguousList}).action instanceof MyList, "matches MyMap")
+  assert.ok(Action({action: ambiguousRecord}).action instanceof MyRecord, "matches MyRecord")
 })

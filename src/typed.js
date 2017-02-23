@@ -220,9 +220,16 @@ class UnionType extends Type {
 
     index = 0
     while (index < count) {
-      const result = variants[index][$read](value)
-      if (!(result instanceof TypeError)) {
-        return result
+      let result
+      try {
+        result = variants[index][$read](value)
+        if (!(result instanceof TypeError)) {
+          return result
+        }
+      } catch (ex) {
+        if (!(ex instanceof TypeError)) {
+          throw ex
+        }
       }
       index = index + 1
     }

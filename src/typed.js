@@ -333,3 +333,26 @@ Typed.Number.Range = (from, to=+Infinity, defaultValue) =>
 
     return value
   }, defaultValue)
+
+Typed.Enum = (values, defaultValue) =>{
+  if (!(values instanceof Array)) {
+    throw TypeError(`"${values}" is not an array`)
+  }
+
+  const map = {}
+  if (values.length === 0) {
+    throw TypeError(`At least one value needs to be there for an Enum`);
+  }
+  values.forEach((val) => {
+    map[val] = val
+  });
+  const validValues = values.join(', ');
+
+
+  return Typed(`Enum(${validValues})`, value => {
+    if (!map[value]){
+      return TypeError(`"${value}" should be in [${validValues}]`)
+    }
+    return value
+  }, defaultValue || values[0])
+}

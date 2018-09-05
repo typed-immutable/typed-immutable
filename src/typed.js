@@ -1,9 +1,5 @@
 import * as Immutable from 'immutable'
-
-if (typeof(Symbol) === 'undefined') {
-  var Symbol = hint => `@@${hint}`
-  Symbol.for = Symbol
-}
+import * as Symbol from 'es6-symbol'
 
 function Construct() {}
 export const construct = value => {

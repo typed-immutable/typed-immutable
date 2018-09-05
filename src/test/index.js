@@ -590,3 +590,8 @@ test("Union of lists, maps, and records", assert => {
   assert.ok(Action({action: ambiguousList}).action instanceof MyList, "matches MyMap")
   assert.ok(Action({action: ambiguousRecord}).action instanceof MyRecord, "matches MyRecord")
 })
+
+test("Typed.Symbol", assert => {
+  assert.equal(typeOf(Symbol), Typed.Symbol.prototype, "typeOf(Symbol) produces Typed.Symbol prototype")
+  assert.ok(typeOf(Symbol.for('foo')) instanceof Typed.Symbol,"typeOf a Symbol produces a Typed.Symbol")
+})

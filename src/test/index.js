@@ -4,6 +4,7 @@ import {List} from "../list"
 import {Map} from "../map"
 import {Record} from "../record"
 import {Typed, typeOf, Union, Range, Maybe} from "../typed"
+import * as Symbol from 'es6-symbol'
 
 test("define a constructor", assert => {
   const MyType = Record({a: Number(1),
